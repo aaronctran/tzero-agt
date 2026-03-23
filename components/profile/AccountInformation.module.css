@@ -1,0 +1,255 @@
+.accountInfoCard {
+  /* Background and border styles are handled by sx prop for consistency */
+}
+
+.title {
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.divider {
+  margin-bottom: 0;
+  margin-top: 0;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.columnsContainer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  margin-top: 24px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+.columnHeader {
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 20px;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.columnHeaderWithEdit {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.editButton {
+  border-color: #42A5F5 !important;
+  color: #42A5F5 !important;
+  text-transform: none !important;
+  font-size: 0.75rem !important;
+  padding: 2px 8px !important;
+  min-width: auto !important;
+  height: 24px !important;
+}
+
+.editButton:hover {
+  border-color: #64B5F6 !important;
+  background-color: rgba(66, 165, 245, 0.1) !important;
+}
+
+.editActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px dotted rgba(255, 255, 255, 0.1);
+}
+
+.fieldsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.fieldItem {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 16px;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.1);
+}
+
+.fieldItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.fieldLabel {
+  color: #888888;
+  font-size: 0.875rem;
+  margin-bottom: 6px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.fieldValue {
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.phoneFieldHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.editIconButton {
+  color: #00ff88;
+  padding: 4px;
+  transition: all 0.2s ease;
+}
+
+.editIconButton:hover {
+  background-color: rgba(0, 255, 136, 0.1);
+  transform: scale(1.05);
+}
+
+.phoneEditContainer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.countryCodeInput {
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.statusItem:hover {
+  opacity: 0.8;
+}
+
+.statusValue {
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.statusIcon {
+  color: #888888;
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.statusItem:hover .statusIcon {
+  transform: translateX(2px);
+}
+
+
+/* Responsive Design */
+@media (max-width: 960px) {
+  .columnsContainer {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .column {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 32px;
+  }
+
+  .column:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .columnHeader {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+  }
+
+  .columnHeaderWithEdit {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .accountInfoCard {
+    padding: 20px 16px;
+  }
+
+  .title {
+    font-size: 1.125rem;
+    margin-bottom: 20px;
+  }
+
+  .divider {
+    margin-bottom: 0;
+  }
+
+  .columnsContainer {
+    margin-top: 20px;
+  }
+
+  .columnsContainer {
+    gap: 24px;
+  }
+
+  .column {
+    padding-bottom: 24px;
+  }
+
+  .columnHeader {
+    font-size: 0.9375rem;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+  }
+
+  .fieldsContainer {
+    gap: 20px;
+  }
+
+  .fieldItem {
+    padding-bottom: 12px;
+  }
+
+  .fieldLabel {
+    font-size: 0.8125rem;
+    margin-bottom: 4px;
+  }
+
+  .fieldValue {
+    font-size: 0.875rem;
+  }
+
+  .phoneEditContainer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .countryCodeInput {
+    width: 100%;
+  }
+}

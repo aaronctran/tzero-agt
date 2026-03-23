@@ -1,0 +1,115 @@
+.container {
+  width: 100%;
+  color: #ffffff;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.backButton {
+  color: #ffffff;
+  background-color: transparent;
+  border: none;
+  text-transform: none;
+  padding: 8px 12px;
+  min-width: auto;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.backButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.backButton .MuiSvgIcon-root {
+  font-size: 20px;
+}
+
+.title {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 28px;
+  letter-spacing: 0.5px;
+}
+
+.bankingList {
+  background-color: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.bankingItem {
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+}
+
+.bankingItem:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.bankingText {
+  color: #ffffff;
+  flex: 1;
+}
+
+.bankingText .MuiListItemText-primary {
+  font-weight: 600;
+  font-size: 16px;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.bankingText .MuiListItemText-secondary {
+  font-size: 14px;
+  color: #888888;
+  font-weight: 400;
+}
+
+.arrowButton {
+  color: #888888;
+  transition: all 0.2s ease-in-out;
+  background-color: rgba(255, 255, 255, 0.05);
+  width: 36px;
+  height: 36px;
+}
+
+.bankingItem:hover .arrowButton {
+  color: #00ff88;
+  background-color: rgba(0, 255, 136, 0.1);
+  transform: translateX(4px);
+}
+
+.divider {
+  border-color: rgba(255, 255, 255, 0.05);
+  margin: 0 24px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 24px 16px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .bankingItem {
+    padding: 16px 20px;
+  }
+
+  .arrowButton {
+    width: 32px;
+    height: 32px;
+  }
+}

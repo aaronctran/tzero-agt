@@ -1,0 +1,212 @@
+.investmentsSection {
+  margin-bottom: 48px;
+}
+
+.sectionTitle {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  margin-bottom: 32px;
+  text-transform: uppercase;
+  display: block;
+}
+
+.investmentsList {
+  margin-bottom: 32px;
+}
+
+.collapsibleSection {
+  background-color: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: all 0.3s ease;
+}
+
+.collapsibleSection:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.categoryTitle {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.tableContainer {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.tableContainer .MuiTableContainer-root {
+  background-color: transparent;
+}
+
+.tableContainer .MuiTable-root {
+  background-color: transparent;
+}
+
+.tableContainer .MuiTableCell-root {
+  padding: 16px;
+}
+
+.tableContainer .MuiTableHead-root .MuiTableCell-root {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.investmentsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.investmentsCard {
+  background-color: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.illustrationContainer {
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.investmentsTitle {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 20px;
+  text-align: center;
+}
+
+.exploreButton {
+  background-color: #00ff88;
+  font-weight: 600;
+  padding: 12px 32px;
+  border-radius: 8px;
+  text-transform: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.exploreButton:hover {
+  background-color: #00e677;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+}
+
+/* Responsive Design */
+@media (min-width: 1200px) {
+  .investmentsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .investmentsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .investmentsSection {
+    margin-bottom: 32px;
+  }
+
+  .investmentsCard {
+    padding: 32px 24px;
+  }
+
+  .illustrationContainer {
+    width: 150px;
+    height: 150px;
+  }
+
+  .investmentsTitle {
+    font-size: 18px;
+  }
+
+  .categoryTitle {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .investmentsGrid {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .investmentsSection {
+    margin-bottom: 24px;
+  }
+
+  .sectionTitle {
+    font-size: 12px;
+    margin-bottom: 20px;
+  }
+
+  .categoryTitle {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .investmentsGrid {
+    gap: 10px;
+  }
+
+  .investmentsCard {
+    padding: 24px 16px;
+  }
+
+  .illustrationContainer {
+    width: 120px;
+    height: 120px;
+  }
+
+  .investmentsTitle {
+    font-size: 16px;
+  }
+
+  .collapsibleSection {
+    padding: 16px;
+  }
+
+  .sectionHeader {
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+  }
+
+  .tableContainer {
+    margin-top: 12px;
+  }
+
+  .tableContainer .MuiTableCell-root {
+    padding: 12px 8px;
+    font-size: 13px;
+  }
+}

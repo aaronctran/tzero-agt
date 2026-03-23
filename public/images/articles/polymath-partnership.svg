@@ -1,0 +1,31 @@
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#0a1a2e"/>
+  
+  <!-- Blockchain Chain Links -->
+  <g transform="translate(200, 150)">
+    <!-- Chain Link 1 -->
+    <path d="M-60,0 Q-60,-20 -40,-20 Q-20,-20 -20,0 Q-20,20 -40,20 Q-60,20 -60,0" 
+          fill="none" stroke="rgba(0, 255, 136, 0.5)" stroke-width="3"/>
+    <line x1="-40" y1="-20" x2="-40" y2="20" stroke="rgba(0, 255, 136, 0.5)" stroke-width="3"/>
+    
+    <!-- Chain Link 2 (Center) -->
+    <path d="M-20,0 Q-20,-20 0,-20 Q20,-20 20,0 Q20,20 0,20 Q-20,20 -20,0" 
+          fill="none" stroke="rgba(0, 255, 136, 0.6)" stroke-width="3"/>
+    <line x1="0" y1="-20" x2="0" y2="20" stroke="rgba(0, 255, 136, 0.6)" stroke-width="3"/>
+    
+    <!-- Chain Link 3 -->
+    <path d="M20,0 Q20,-20 40,-20 Q60,-20 60,0 Q60,20 40,20 Q20,20 20,0" 
+          fill="none" stroke="rgba(0, 255, 136, 0.5)" stroke-width="3"/>
+    <line x1="40" y1="-20" x2="40" y2="20" stroke="rgba(0, 255, 136, 0.5)" stroke-width="3"/>
+  </g>
+  
+  <!-- Glow Effect -->
+  <circle cx="200" cy="150" r="100" fill="rgba(0, 255, 136, 0.05)"/>
+  <circle cx="200" cy="150" r="80" fill="rgba(0, 255, 136, 0.08)"/>
+  
+  <!-- Small Nodes -->
+  <circle cx="140" cy="120" r="3" fill="rgba(0, 255, 136, 0.8)"/>
+  <circle cx="260" cy="120" r="3" fill="rgba(0, 255, 136, 0.8)"/>
+  <circle cx="140" cy="180" r="3" fill="rgba(0, 255, 136, 0.8)"/>
+  <circle cx="260" cy="180" r="3" fill="rgba(0, 255, 136, 0.8)"/>
+</svg>

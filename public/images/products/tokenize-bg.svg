@@ -1,0 +1,61 @@
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tokenizeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#tokenizeGrad)"/>
+  
+  <!-- Ethereum Logo -->
+  <circle cx="80" cy="80" r="30" fill="rgba(255,255,255,0.2)"/>
+  <path d="M80,55 L95,70 L80,85 L65,70 Z" fill="rgba(255,255,255,0.4)"/>
+  <path d="M80,85 L95,100 L80,115 L65,100 Z" fill="rgba(255,255,255,0.3)"/>
+  <path d="M80,85 L80,115" stroke="rgba(255,255,255,0.3)" stroke-width="2" fill="none"/>
+  
+  <!-- Bitcoin Logo -->
+  <circle cx="180" cy="100" r="28" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="180" cy="100" r="20" fill="rgba(255,193,7,0.6)"/>
+  <text x="180" y="108" text-anchor="middle" fill="#ffffff" font-size="20" font-weight="bold">₿</text>
+  
+  <!-- Polygon Logo (S shape) -->
+  <circle cx="280" cy="80" r="25" fill="rgba(255,255,255,0.2)"/>
+  <path d="M270,70 Q275,75 280,70 Q285,75 280,80 Q275,85 280,90 Q285,95 280,100" 
+        stroke="rgba(130,71,229,0.8)" stroke-width="3" fill="none" stroke-linecap="round"/>
+  
+  <!-- Chain Links -->
+  <circle cx="120" cy="180" r="20" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+  <circle cx="160" cy="180" r="20" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+  <line x1="140" y1="180" x2="140" y2="180" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+  
+  <!-- Blockchain Blocks -->
+  <rect x="220" y="160" width="40" height="40" rx="4" fill="rgba(255,255,255,0.2)"/>
+  <rect x="225" y="165" width="30" height="30" fill="rgba(255,255,255,0.3)"/>
+  <line x1="230" y1="175" x2="250" y2="175" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+  <line x1="230" y1="185" x2="250" y2="185" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+  
+  <rect x="270" y="170" width="40" height="40" rx="4" fill="rgba(255,255,255,0.2)"/>
+  <rect x="275" y="175" width="30" height="30" fill="rgba(255,255,255,0.3)"/>
+  <line x1="280" y1="185" x2="300" y2="185" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+  <line x1="280" y1="195" x2="300" y2="195" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+  
+  <!-- Crypto Coin Stack -->
+  <circle cx="340" cy="200" r="18" fill="rgba(255,255,255,0.25)"/>
+  <circle cx="340" cy="200" r="12" fill="rgba(255,255,255,0.35)"/>
+  <circle cx="340" cy="200" r="6" fill="rgba(0,0,0,0.2)"/>
+  
+  <circle cx="340" cy="230" r="18" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="340" cy="230" r="12" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="340" cy="230" r="6" fill="rgba(0,0,0,0.2)"/>
+  
+  <!-- Network Nodes -->
+  <circle cx="60" cy="220" r="8" fill="rgba(0,255,136,0.5)"/>
+  <circle cx="100" cy="240" r="8" fill="rgba(0,255,136,0.5)"/>
+  <circle cx="140" cy="220" r="8" fill="rgba(0,255,136,0.5)"/>
+  <line x1="68" y1="220" x2="92" y2="240" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  <line x1="108" y1="240" x2="132" y2="220" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  
+  <!-- Solana Logo (simplified) -->
+  <circle cx="200" cy="240" r="22" fill="rgba(255,255,255,0.2)"/>
+  <path d="M190,230 L210,230 L200,250 Z" fill="rgba(0,255,136,0.6)"/>
+</svg>

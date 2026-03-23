@@ -1,0 +1,171 @@
+.page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.heroSection {
+  position: relative;
+  min-height: 70vh;
+  overflow: hidden;
+}
+
+.pyramidBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  opacity: 0.1;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  padding: 48px 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.contentSection {
+  padding: 48px 0;
+}
+
+.heroTitle {
+  font-size: 5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #00ff88 0%, #ffffff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.heroSubtitle {
+  font-size: 1.5rem;
+  color: #cccccc;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.howToInvestSection {
+  margin-top: 96px;
+  padding-top: 64px;
+}
+
+.howToInvestTitle {
+  text-align: center;
+  margin-bottom: 48px;
+  font-size: 3rem;
+}
+
+.stepCard {
+  text-align: center;
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  background-color: rgba(0, 255, 136, 0.05);
+  height: 100%;
+  transition: transform 0.3s, border-color 0.3s;
+}
+
+.stepCard:hover {
+  transform: translateY(-5px);
+  border-color: #00ff88;
+}
+
+.stepNumber {
+  color: #00ff88;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  font-weight: 400;
+}
+
+.stepTitle {
+  margin-bottom: 16px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.stepDescription {
+  color: #cccccc;
+  line-height: 1.6;
+}
+
+@media (max-width: 960px) {
+  .heroTitle {
+    font-size: 4rem;
+  }
+  
+  .heroSubtitle {
+    font-size: 1.2rem;
+  }
+  
+  .howToInvestTitle {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+  
+  .heroSubtitle {
+    font-size: 1.2rem;
+  }
+  
+  .howToInvestTitle {
+    font-size: 2rem;
+  }
+  
+  .heroSection {
+    min-height: 70vh;
+  }
+}
+
+/* Product Cards - horizontal row with infinite scroll animation */
+.productCardsContainer {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.productCardsWrapper {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 40px;
+  width: max-content;
+  will-change: transform;
+  animation: productCardsScroll 45s linear infinite;
+}
+
+.productCardsWrapper:hover {
+  animation-play-state: paused;
+}
+
+.productCardsWrapper > * {
+  flex: 0 0 auto;
+}
+
+@keyframes productCardsScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

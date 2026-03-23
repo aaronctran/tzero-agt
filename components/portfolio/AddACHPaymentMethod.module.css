@@ -1,0 +1,96 @@
+.container {
+  width: 100%;
+  background-color: #000000;
+  color: #ffffff;
+  min-height: calc(100vh - 64px);
+  position: relative;
+  z-index: 1;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.backButton {
+  color: #ffffff;
+  background-color: transparent;
+  border: none;
+  text-transform: none;
+  padding: 8px 12px;
+  min-width: auto;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  flex-shrink: 0;
+}
+
+.backButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.backButton .MuiSvgIcon-root {
+  font-size: 20px;
+}
+
+.title {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 28px;
+  letter-spacing: 0.5px;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 400px;
+}
+
+.loadingText {
+  color: #ffffff;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 600px;
+}
+
+.description {
+  color: #888888;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.linkButton {
+  padding: 14px 32px;
+  font-size: 16px;
+  text-transform: none;
+  border-radius: 8px;
+}
+
+.alert {
+  margin-bottom: 24px;
+  max-width: 600px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 24px 16px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .description {
+    font-size: 14px;
+  }
+}

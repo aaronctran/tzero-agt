@@ -1,0 +1,212 @@
+.container {
+  width: 100%;
+  background-color: #000000;
+  color: #ffffff;
+  min-height: calc(100vh - 64px);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.backButton {
+  color: #ffffff;
+  background-color: transparent;
+  border: none;
+  text-transform: none;
+  padding: 8px 12px;
+  min-width: auto;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  flex-shrink: 0;
+}
+
+.backButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.backButton .MuiSvgIcon-root {
+  font-size: 20px;
+}
+
+.title {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 28px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.optionsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  max-width: 800px;
+}
+
+.optionCard {
+  position: relative;
+  background-color: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+}
+
+.optionCard:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.recommendedChip {
+  position: absolute;
+  top: -8px;
+  left: 16px;
+  background-color: #040202;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 11px;
+  padding: 4px 8px;
+  height: 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 1;
+}
+
+.recommendedChip .MuiChip-label {
+  padding: 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.iconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background-color: rgba(0, 255, 136, 0.1);
+  border-radius: 12px;
+  color: #00ff88;
+  flex-shrink: 0;
+}
+
+.iconContainer .MuiSvgIcon-root {
+  font-size: 28px;
+}
+
+.optionName {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.featuresList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkIcon {
+  color: #00ff88;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.featureText {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.selectButton {
+  align-self: flex-end;
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff !important;
+  font-weight: 500;
+  font-size: 14px;
+  text-transform: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  transition: all 0.2s ease-in-out;
+  margin-top: auto;
+}
+
+.selectButton:hover {
+  border-color: #00ff88;
+  color: #00ff88;
+  background-color: rgba(0, 255, 136, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 24px 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .optionsContainer {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .optionCard {
+    padding: 20px;
+  }
+
+  .iconContainer {
+    width: 40px;
+    height: 40px;
+  }
+
+  .iconContainer .MuiSvgIcon-root {
+    font-size: 24px;
+  }
+
+  .optionName {
+    font-size: 18px;
+  }
+
+  .selectButton {
+    width: 100%;
+    align-self: stretch;
+  }
+}

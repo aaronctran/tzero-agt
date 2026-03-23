@@ -1,0 +1,46 @@
+.page {
+  min-height: 100vh;
+  color: #ffffff;
+  background-color: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.centered {
+  width: 100%;
+  max-width: 440px;
+  padding: 32px 24px;
+  position: relative;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.backButton {
+  color: #ffffff;
+  margin-right: 12px;
+}
+
+.backButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.headerTitle {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.authContent {
+  width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .centered {
+    padding: 24px 16px;
+  }
+}

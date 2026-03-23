@@ -1,0 +1,121 @@
+.container {
+  width: 100%;
+  background-color: #000000;
+  color: #ffffff;
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.backButton {
+  color: #ffffff;
+  background-color: transparent;
+  border: none;
+  text-transform: none;
+  padding: 8px 12px;
+  min-width: auto;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  flex-shrink: 0;
+}
+
+.backButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.backButton .MuiSvgIcon-root {
+  font-size: 20px;
+}
+
+.titleSection {
+  flex: 1;
+}
+
+.title {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 28px;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  color: #888888;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+
+.addButtonContainer {
+  display: flex;
+  justify-content: flex-start;
+  padding-top: 0;
+}
+
+.addButton {
+  width: auto;
+  min-width: 200px;
+  padding: 14px 32px;
+  border-color: #00ff88;
+  color: #00ff88;
+  font-weight: 600;
+  font-size: 16px;
+  text-transform: none;
+  border-radius: 8px;
+  border-width: 2px;
+  transition: all 0.2s ease-in-out;
+}
+
+.addButton:hover {
+  background-color: rgba(0, 255, 136, 0.1);
+  border-color: #00ff88;
+  transform: translateY(-2px);
+}
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 24px 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .paymentMethodCard {
+    padding: 16px 20px;
+  }
+
+  .paymentMethodIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .paymentMethodIcon .MuiSvgIcon-root {
+    font-size: 20px;
+  }
+
+  .paymentMethodName {
+    font-size: 16px;
+  }
+
+  .addButton {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}

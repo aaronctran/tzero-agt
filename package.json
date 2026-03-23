@@ -1,0 +1,43 @@
+{
+  "name": "tzerowebapppoc",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test:lint": "next lint",
+    "prepare": "node .husky/install.mjs"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.1",
+    "@mui/icons-material": "^5.16.7",
+    "@mui/material": "^5.16.7",
+    "axios": "^1.7.7",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.6.0",
+    "clsx": "^2.1.1",
+    "next": "^14.2.5",
+    "plaid": "^41.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-plaid-link": "^4.1.1",
+    "react-qr-code": "^2.0.18",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^20.14.12",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/uuid": "^10.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.5",
+    "husky": "^9.1.7",
+    "sharp": "^0.34.5",
+    "typescript": "^5.5.4"
+  }
+}

@@ -1,0 +1,36 @@
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#0a1a2e"/>
+  
+  <!-- Scale/Justice Icon -->
+  <g transform="translate(200, 150)">
+    <!-- Scale Base -->
+    <line x1="-40" y1="30" x2="40" y2="30" stroke="rgba(0, 255, 136, 0.5)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="0" y1="-20" x2="0" y2="30" stroke="rgba(0, 255, 136, 0.5)" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Left Pan -->
+    <ellipse cx="-30" cy="30" rx="20" ry="8" fill="none" stroke="rgba(0, 255, 136, 0.6)" stroke-width="2"/>
+    <line x1="-50" y1="30" x2="-10" y2="30" stroke="rgba(0, 255, 136, 0.6)" stroke-width="2"/>
+    
+    <!-- Right Pan -->
+    <ellipse cx="30" cy="30" rx="20" ry="8" fill="none" stroke="rgba(0, 255, 136, 0.6)" stroke-width="2"/>
+    <line x1="10" y1="30" x2="50" y2="30" stroke="rgba(0, 255, 136, 0.6)" stroke-width="2"/>
+  </g>
+  
+  <!-- Concentric Circles -->
+  <circle cx="200" cy="150" r="100" fill="none" stroke="rgba(0, 255, 136, 0.15)" stroke-width="1"/>
+  <circle cx="200" cy="150" r="120" fill="none" stroke="rgba(0, 255, 136, 0.1)" stroke-width="1"/>
+  
+  <!-- Network Nodes -->
+  <circle cx="120" cy="100" r="4" fill="rgba(0, 255, 136, 0.7)"/>
+  <circle cx="280" cy="100" r="4" fill="rgba(0, 255, 136, 0.7)"/>
+  <circle cx="120" cy="200" r="4" fill="rgba(0, 255, 136, 0.7)"/>
+  <circle cx="280" cy="200" r="4" fill="rgba(0, 255, 136, 0.7)"/>
+  <circle cx="200" cy="80" r="4" fill="rgba(0, 255, 136, 0.7)"/>
+  <circle cx="200" cy="220" r="4" fill="rgba(0, 255, 136, 0.7)"/>
+  
+  <!-- Connecting Lines -->
+  <line x1="120" y1="100" x2="200" y2="150" stroke="rgba(0, 255, 136, 0.2)" stroke-width="1"/>
+  <line x1="280" y1="100" x2="200" y2="150" stroke="rgba(0, 255, 136, 0.2)" stroke-width="1"/>
+  <line x1="120" y1="200" x2="200" y2="150" stroke="rgba(0, 255, 136, 0.2)" stroke-width="1"/>
+  <line x1="280" y1="200" x2="200" y2="150" stroke="rgba(0, 255, 136, 0.2)" stroke-width="1"/>
+</svg>

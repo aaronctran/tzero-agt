@@ -1,0 +1,48 @@
+.filtersContainer {
+  /* Container styling removed - component is now placed directly on page */
+}
+
+.filtersHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filtersTitle {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 18px;
+}
+
+.resultCount {
+  color: #888888;
+  font-size: 14px;
+}
+
+.filtersRow {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filterControl {
+  min-width: 180px;
+  z-index: 1300;
+}
+
+@media (max-width: 600px) {
+  .filtersContainer {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .filtersRow {
+    flex-direction: column;
+  }
+  
+  .filterControl {
+    width: 100%;
+    min-width: 100%;
+  }
+}

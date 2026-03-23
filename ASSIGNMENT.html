@@ -1,0 +1,376 @@
+<!DOCTYPE html><html><head><title></title><meta charset="utf-8"><style>* {
+	box-sizing: border-box;
+}
+
+html {
+	font-size: 100%;
+}
+
+body {
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+		'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+	line-height: 1.6;
+	font-size: 0.6875em; /* 11 pt */
+	color: #111;
+	margin: 0;
+}
+
+body > :first-child {
+	padding-top: 0;
+	margin-top: 0;
+}
+
+body > :last-child {
+	margin-bottom: 0;
+	padding-bottom: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	margin: 0;
+	padding: 0.5em 0 0.25em;
+}
+
+h5,
+h6 {
+	padding: 0;
+}
+
+h5 {
+	font-size: 1em;
+}
+
+h6 {
+	font-size: 0.875em;
+	text-transform: uppercase;
+}
+
+p {
+	margin: 0.25em 0 1em;
+}
+
+blockquote {
+	margin: 0.5em 0 1em;
+	padding-left: 0.5em;
+	padding-right: 1em;
+	border-left: 4px solid gainsboro;
+	font-style: italic;
+}
+
+ul,
+ol {
+	margin: 0;
+	margin-left: 1em;
+	padding: 0 1.5em 0.5em;
+}
+
+pre {
+	white-space: pre-wrap;
+}
+
+h1 code,
+h2 code,
+h3 code,
+h4 code,
+h5 code,
+h6 code,
+p code,
+li code,
+pre code {
+	background-color: #f8f8f8;
+	padding: 0.1em 0.375em;
+	border: 1px solid #f8f8f8;
+	border-radius: 0.25em;
+	font-family: monospace;
+	font-size: 1.2em;
+}
+
+pre code {
+	display: block;
+	padding: 0.5em;
+}
+
+.page-break {
+	page-break-after: always;
+}
+
+img {
+	max-width: 100%;
+	margin: 1em 0;
+}
+
+table {
+	border-spacing: 0;
+	border-collapse: collapse;
+	display: block;
+	margin: 0 0 1em;
+	width: 100%;
+	overflow: auto;
+}
+
+table th,
+table td {
+	padding: 0.5em 1em;
+	border: 1px solid gainsboro;
+}
+
+table th {
+	font-weight: 600;
+}
+
+table tr {
+	background-color: white;
+	border-top: 1px solid gainsboro;
+}
+
+table tr:nth-child(2n) {
+	background-color: whitesmoke;
+}
+/*# sourceURL=/Users/asharma/.npm/_npx/55158e48eb5c59f7/node_modules/md-to-pdf/markdown.css*/</style><style>pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1em
+}
+code.hljs {
+  padding: 3px 5px
+}
+/*!
+  Theme: GitHub
+  Description: Light theme as seen on github.com
+  Author: github.com
+  Maintainer: @Hirse
+  Updated: 2021-05-15
+
+  Outdated base version: https://github.com/primer/github-syntax-light
+  Current colors taken from GitHub's CSS
+*/
+.hljs {
+  color: #24292e;
+  background: #ffffff
+}
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta .hljs-keyword,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ {
+  /* prettylights-syntax-keyword */
+  color: #d73a49
+}
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+  /* prettylights-syntax-entity */
+  color: #6f42c1
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-variable,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id {
+  /* prettylights-syntax-constant */
+  color: #005cc5
+}
+.hljs-regexp,
+.hljs-string,
+.hljs-meta .hljs-string {
+  /* prettylights-syntax-string */
+  color: #032f62
+}
+.hljs-built_in,
+.hljs-symbol {
+  /* prettylights-syntax-variable */
+  color: #e36209
+}
+.hljs-comment,
+.hljs-code,
+.hljs-formula {
+  /* prettylights-syntax-comment */
+  color: #6a737d
+}
+.hljs-name,
+.hljs-quote,
+.hljs-selector-tag,
+.hljs-selector-pseudo {
+  /* prettylights-syntax-entity-tag */
+  color: #22863a
+}
+.hljs-subst {
+  /* prettylights-syntax-storage-modifier-import */
+  color: #24292e
+}
+.hljs-section {
+  /* prettylights-syntax-markup-heading */
+  color: #005cc5;
+  font-weight: bold
+}
+.hljs-bullet {
+  /* prettylights-syntax-markup-list */
+  color: #735c0f
+}
+.hljs-emphasis {
+  /* prettylights-syntax-markup-italic */
+  color: #24292e;
+  font-style: italic
+}
+.hljs-strong {
+  /* prettylights-syntax-markup-bold */
+  color: #24292e;
+  font-weight: bold
+}
+.hljs-addition {
+  /* prettylights-syntax-markup-inserted */
+  color: #22863a;
+  background-color: #f0fff4
+}
+.hljs-deletion {
+  /* prettylights-syntax-markup-deleted */
+  color: #b31d28;
+  background-color: #ffeef0
+}
+.hljs-char.escape_,
+.hljs-link,
+.hljs-params,
+.hljs-property,
+.hljs-punctuation,
+.hljs-tag {
+  /* purposely ignored */
+  
+}/*# sourceURL=/Users/asharma/.npm/_npx/55158e48eb5c59f7/node_modules/highlight.js/styles/github.css*/</style></head>
+	<body class="">
+		<h1 id="secondary-marketplace---full-stack-assignment">Secondary Marketplace - Full Stack Assignment</h1>
+<h2 id="overview">Overview</h2>
+<p>Build a <strong>Secondary Marketplace</strong> for trading digital securities. This is a Next.js 14 full-stack application with an in-house SQLite database. Your task is to complete the marketplace functionality where users can browse assets, place buy/sell orders, manage their portfolio, and view order history.</p>
+<h2 id="time-expectation">Time Expectation</h2>
+<p>Spend a reasonable amount of time. Focus on quality over quantity. Record a <strong>10-minute screen recording</strong> demonstrating what you achieved.</p>
+<h2 id="whats-already-built-do-not-modify-auth-flow">What's Already Built (DO NOT modify auth flow)</h2>
+<ul>
+<li>User authentication (signup, login, email verification)</li>
+<li>Account setup / onboarding</li>
+<li>Banking: deposit funds, payment methods</li>
+<li>Basic portfolio view</li>
+<li>Database schema with trading tables</li>
+<li>Theme and layout components</li>
+<li>A starter <code>GET /api/trading/assets</code> API</li>
+<li>An order matching engine (<code>lib/matchingEngine.ts</code>)</li>
+</ul>
+<h2 id="what-you-need-to-build">What You Need to Build</h2>
+<h3 id="1-asset-listing-page-investingsecondary-trading">1. Asset Listing Page (<code>/investing/secondary-trading</code>)</h3>
+<p>Display available assets with filtering and search. Navigate to detail page on click.</p>
+<h3 id="2-asset-detail-page-investingsecondary-tradingid">2. Asset Detail Page (<code>/investing/secondary-trading/[id]</code>)</h3>
+<p>Show asset info, price chart, order book, and an order placement form. Display user's orders and positions.</p>
+<h3 id="3-trading-api-routes">3. Trading API Routes</h3>
+<p>Build the backend APIs for placing orders, cancelling orders, and fetching user trading data. The database tables and matching engine are provided — you design the API flow and business logic (validation, balance checks, position updates, etc.).</p>
+<h3 id="4-portfolio-integration">4. Portfolio Integration</h3>
+<p>Connect trading to the portfolio — show holdings, order history, cash balance updates.</p>
+<h3 id="5-ux-enhancements-bonus">5. UX Enhancements (Bonus)</h3>
+<p>Loading states, error handling, responsive design, confirmations, validation — any improvements you think matter.</p>
+<h2 id="key-resources">Key Resources</h2>
+<h3 id="data">Data</h3>
+<ul>
+<li><strong>5 trading assets</strong> in <code>data/secondaryTradingAssets.json</code> — each with price data, daily OHLCV history, company info</li>
+<li><strong>Order book template</strong> in the same file at <code>templates.orderBook</code> — multiply <code>priceMultiplier × asset.basePrice</code> for display prices</li>
+</ul>
+<h3 id="whats-provided">What's Provided</h3>
+<table>
+<thead>
+<tr>
+<th>Resource</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GET /api/trading/assets</code></td>
+<td>Starter API — returns all 5 assets (enhance with filtering)</td>
+</tr>
+<tr>
+<td><code>lib/matchingEngine.ts</code></td>
+<td>Order matching engine — <code>matchOrder()</code> matches buy/sell orders and updates positions</td>
+</tr>
+<tr>
+<td><code>lib/db.ts</code></td>
+<td>Database schema with trading tables (orders, trades, holdings, balances)</td>
+</tr>
+<tr>
+<td><code>lib/auth.ts</code></td>
+<td>Server-side auth helper: <code>getAuthUserId(request)</code></td>
+</tr>
+<tr>
+<td><code>lib/api.ts</code></td>
+<td>Axios client for frontend API calls (auto-injects auth token)</td>
+</tr>
+<tr>
+<td><code>lib/investmentUtils.ts</code></td>
+<td><code>formatCurrency</code>, <code>slugify</code>, <code>getSeededColor</code>, chart helpers</td>
+</tr>
+<tr>
+<td><code>contexts/AuthContext.tsx</code></td>
+<td><code>useAuth()</code> hook</td>
+</tr>
+</tbody></table>
+<h3 id="database-tables-schema-in-libdbts">Database Tables (schema in <code>lib/db.ts</code>)</h3>
+<ul>
+<li><code>trading_orders</code> — buy/sell orders (symbol, side, quantity, price, status)</li>
+<li><code>trading_trades</code> — matched trades between orders</li>
+<li><code>trading_holdings</code> — user positions (symbol, shares, avg_cost)</li>
+<li><code>trading_balances</code> — user cash balance (seeded with $1,000 on signup)</li>
+</ul>
+<h2 id="quick-start">Quick Start</h2>
+<pre><code class="hljs bash">npm install
+npm run dev        <span class="hljs-comment"># http://localhost:3000</span>
+</code></pre>
+<ol>
+<li>Sign up at <code>/auth</code>, complete account setup</li>
+<li>Deposit funds at <code>/account/banking</code></li>
+<li>Build the marketplace at <code>/investing/secondary-trading</code></li>
+</ol>
+<h2 id="nextjs-primer-if-new-to-nextjs">Next.js Primer (if new to Next.js)</h2>
+<ul>
+<li><strong>Pages</strong>: <code>page.tsx</code> files under <code>app/</code> — folder path = URL route</li>
+<li><strong>API routes</strong>: <code>route.ts</code> files under <code>app/api/</code> — export <code>GET</code>, <code>POST</code> functions</li>
+<li><strong>Client components</strong>: Add <code>'use client'</code> at top for React hooks / browser APIs</li>
+<li><strong>Path aliases</strong>: <code>@/</code> = project root (e.g., <code>import api from '@/lib/api'</code>)</li>
+</ul>
+<h2 id="tech-stack">Tech Stack</h2>
+<p>Next.js 14, React 18, Material-UI 5, TypeScript, SQLite (better-sqlite3), Axios</p>
+<h2 id="guidelines">Guidelines</h2>
+<ul>
+<li>Use AI tools (encouraged!)</li>
+<li>Focus on functionality first, polish second</li>
+<li>Test end-to-end</li>
+<li>Look at real trading platforms for inspiration</li>
+</ul>
+<h2 id="submission">Submission</h2>
+<ol>
+<li><strong>Create a Git repository</strong> — Push this project to your personal GitHub (or GitLab/Bitbucket) account as a <strong>public</strong> or <strong>private</strong> repository (if private, grant access to the reviewers mentioned in the assignment email)</li>
+<li><strong>Add a <code>SOLUTION.md</code></strong> file at the project root summarizing:<ul>
+<li>What you built and how it works</li>
+<li>Key technical decisions and trade-offs</li>
+<li>Anything you'd improve or do differently with more time</li>
+</ul>
+</li>
+<li><strong>Record a ~10-minute screen recording</strong> demonstrating your work — walk through the features, explain your approach, and highlight anything noteworthy. Upload the video to a shareable platform (Loom, Google Drive, YouTube unlisted, etc.)</li>
+<li><strong>Share your submission</strong> — Reply to the assignment email with:<ul>
+<li>Link to your Git repository</li>
+<li>Link to your screen recording</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><strong>Note:</strong> Make sure <code>node_modules/</code> and <code>data/tzero.db</code> are in <code>.gitignore</code> before pushing. Do <strong>not</strong> commit the SQLite database file or dependency folders.</p>
+</blockquote>
+
+	
+
+</body></html>

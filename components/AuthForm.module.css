@@ -1,0 +1,109 @@
+.socialButtonsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.socialButton {
+  padding: 12px 0;
+  border-radius: 12px;
+  text-transform: none;
+  font-weight: 500;
+  width: 100%;
+}
+
+.socialButtonWhite {
+  background-color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.socialButtonWhite:hover {
+  background-color: #f5f5f5 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.socialButtonFacebook {
+  background-color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.socialButtonFacebook:hover {
+  background-color: #f5f5f5 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.socialIcon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dividerContainer {
+  display: flex;
+  align-items: center;
+  margin: 24px 0;
+}
+
+.divider {
+  flex: 1;
+  border-color: rgba(255, 255, 255, 0.2);
+  border-style: dashed;
+}
+
+.dividerText {
+  padding: 0 16px;
+  color: #cccccc;
+  font-size: 14px;
+}
+
+.errorAlert {
+  margin-bottom: 24px;
+  background-color: rgba(211, 47, 47, 0.1);
+  color: #ff6b6b;
+  border: 1px solid rgba(211, 47, 47, 0.3);
+}
+
+.form {
+  width: 100%;
+}
+
+.textField {
+  margin-bottom: 24px;
+}
+
+.textField:last-of-type {
+  margin-bottom: 0;
+}
+
+.forgotPasswordContainer {
+  margin-bottom: 24px;
+  text-align: right;
+}
+
+.forgotPasswordLink {
+  color: #00ff88;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.forgotPasswordLink:hover {
+  text-decoration: underline;
+}
+
+.continueButton {
+  padding: 12px 0;
+  border-radius: 12px;
+  text-transform: none;
+  font-weight: 600;
+  font-size: 16px;
+  width: 100%;
+}

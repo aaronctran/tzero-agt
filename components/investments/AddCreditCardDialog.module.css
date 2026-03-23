@@ -1,0 +1,79 @@
+.dialogTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 28px 16px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.05) 0%, transparent 100%);
+}
+
+.title {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 24px;
+}
+
+.closeButton {
+  color: #ffffff;
+  padding: 4px;
+}
+
+.closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dialogContent {
+  padding: 24px;
+}
+
+.errorAlert {
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: rgba(255, 77, 77, 0.1);
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  border-radius: 8px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.row {
+  display: flex;
+  gap: 16px;
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.submitButton {
+  padding: 12px 32px;
+  font-size: 16px;
+  text-transform: 'none';
+  border-radius: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dialogTitle {
+    padding: 20px 16px 8px 16px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .dialogContent {
+    padding: 20px 16px;
+  }
+
+  .row {
+    flex-direction: column;
+    gap: 20px;
+  }
+}

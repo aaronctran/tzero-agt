@@ -1,0 +1,58 @@
+/* Global styles for tZERO - Material-UI based styling */
+/* Material-UI's CssBaseline handles most resets, these are additional overrides */
+
+/*:root {*/
+/*  !* tZERO Brand Colors *!*/
+/*  --tzero-green: #00ff88;*/
+/*  --tzero-green-light: #33ff99;*/
+/*  --tzero-green-dark: #00cc6a;*/
+/*  */
+/*  !* Error/Red Colors *!*/
+/*  --error-red: #ff4444;*/
+/*  --error-red-light: #ff6b6b;*/
+/*  --error-red-dark: #cc0000;*/
+/*  */
+/*  !* Warning Colors *!*/
+/*  --warning-orange: #ffa726;*/
+/*  --warning-orange-light: #ffb74d;*/
+/*  --warning-orange-dark: #f57c00;*/
+/*  */
+/*  !* Info Colors *!*/
+/*  --info-blue: #42a5f5;*/
+/*  --info-blue-light: #64b5f6;*/
+/*  --info-blue-dark: #1976d2;*/
+/*  */
+/*  !* Background Colors *!*/
+/*  --bg-black: #000000;*/
+/*  --bg-dark: #1a1a1a;*/
+/*  --bg-darker: #0a0a0a;*/
+/*  */
+/*  !* Text Colors *!*/
+/*  --text-white: #ffffff;*/
+/*  --text-light: #cccccc;*/
+/*  --text-gray: #888888;*/
+/*  --text-dark-gray: #666666;*/
+/*  */
+/*  !* Border Colors *!*/
+/*  --border-light: rgba(255, 255, 255, 0.1);*/
+/*  --border-medium: rgba(255, 255, 255, 0.2);*/
+/*  --border-dark: rgba(255, 255, 255, 0.08);*/
+/*}*/
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  /*background-color: var(--bg-black);*/
+  /*color: var(--text-white);*/
+}
+
+/* Ensure smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}

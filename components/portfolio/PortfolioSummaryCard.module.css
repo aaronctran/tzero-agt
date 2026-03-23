@@ -1,0 +1,254 @@
+.card {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 32px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  border-color: rgba(0, 255, 136, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 255, 136, 0.1);
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.title {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.mainValue {
+  text-align: center;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.totalValue {
+  color: #00ff88;
+  font-weight: 700;
+  font-size: 48px;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+
+.totalLabel {
+  color: #888888;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.statsGrid {
+  margin-top: 8px;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  height: 100%;
+}
+
+.statCard:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.statIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statLabel {
+  color: #888888;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statValue {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.depositButton {
+  height: 100%;
+  min-height: 88px;
+  max-height: 88px;
+  text-transform: none;
+  font-size: 16px;
+  border-radius: 12px;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .statsGrid {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 960px) {
+  .card {
+    padding: 24px;
+  }
+
+  .totalValue {
+    font-size: 40px;
+  }
+
+  .statCard {
+    padding: 16px;
+    flex-direction: row;
+    align-items: center;
+    min-height: 88px;
+  }
+
+  .statIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .statValue {
+    font-size: 18px;
+  }
+
+  .depositButton {
+    min-height: 88px;
+    max-height: 88px;
+    height: 88px;
+  }
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 20px;
+  }
+
+  .header {
+    margin-bottom: 24px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .totalValue {
+    font-size: 36px;
+  }
+
+  .statsGrid {
+    gap: 12px;
+  }
+
+  .statCard {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .statIcon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .statLabel {
+    font-size: 11px;
+  }
+
+  .statValue {
+    font-size: 16px;
+  }
+
+  .depositButton {
+    min-height: 72px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .header {
+    margin-bottom: 20px;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .totalValue {
+    font-size: 32px;
+  }
+
+  .totalLabel {
+    font-size: 12px;
+  }
+
+  .statsGrid {
+    gap: 12px;
+  }
+
+  .statCard {
+    padding: 12px;
+    gap: 10px;
+    flex-direction: row;
+  }
+
+  .statIcon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .statIcon .MuiSvgIcon-root {
+    font-size: 20px;
+  }
+
+  .statLabel {
+    font-size: 10px;
+  }
+
+  .statValue {
+    font-size: 14px;
+  }
+
+  .depositButton {
+    min-height: 64px;
+    font-size: 14px;
+    padding: 12px;
+  }
+}

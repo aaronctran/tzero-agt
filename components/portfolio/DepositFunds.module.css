@@ -1,0 +1,205 @@
+.container {
+  width: 100%;
+  min-height: calc(100vh - 64px);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 40px;
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.backButton {
+  color: #ffffff;
+  background-color: transparent;
+  border: none;
+  text-transform: none;
+  padding: 8px 12px;
+  min-width: auto;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  flex-shrink: 0;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 48px;
+  align-items: center;
+  width: 100%;
+}
+
+.summary {
+  width: 100%;
+  text-align: center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+}
+
+.accountLabel {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.balance {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.panel {
+  border-radius: 20px;
+  padding: 24px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.amountRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  width: 100%;
+  justify-content: center;
+  border: 1px solid;
+}
+
+.amountLabel {
+  font-weight: 600;
+}
+
+.amountPrefix {
+  font-weight: 600;
+}
+
+.amountInput {
+  font-size: 16px;
+  font-weight: 600;
+  width: 80px;
+  text-align: center;
+}
+
+.amountInput input[type='number']::-webkit-outer-spin-button,
+.amountInput input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.amountInput input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.methodList {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.methodItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid;
+  border-radius: 16px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.methodItem:hover {
+  transform: translateY(-1px);
+}
+
+.methodInfo {
+  flex: 1;
+}
+
+.methodNameRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.methodLabel {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.methodAvailable {
+  font-size: 12px;
+}
+
+.notice {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.limit {
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.confirmButton {
+  text-transform: none;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 12px 16px;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .panel {
+    width: 100%;
+    max-width: 420px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 20px 18px 32px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .panel {
+    max-width: 100%;
+  }
+}
