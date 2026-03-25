@@ -2,12 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Box, Typography, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton } from '@mui/material'
-import { ExpandMore, ExpandLess } from '@mui/icons-material'
-import { useTheme } from '@mui/material/styles'
-import InvestmentLookupIllustration from './InvestmentLookupIllustration'
-import InvestmentCard from './InvestmentCard'
-import styles from './InvestmentsSection.module.css'
+import { Box, Typography, Button, Paper, IconButton } from '@mui/material'
+import { ExpandMore, ExpandLess, TrendingUp } from '@mui/icons-material'
 
 interface Investment {
   id: string
@@ -26,230 +22,193 @@ interface InvestmentsSectionProps {
   onTogglePositions?: () => void
 }
 
+const fmtCurrency = (n: number) =>
+  n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 })
+
+const fmtDate = (s: string) => {
+  try { return new Date(s).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) }
+  catch { return '—' }
+}
+
+const getPaymentLabel = (type: string) =>
+  type === 'TZERO_BALANCE' ? 'tZERO Balance' : type === 'ACH' ? 'Bank Account' : type === 'CREDIT_CARD' ? 'Credit Card' : type
+
+const StatusPill = ({ status }: { status: string }) => {
+  const colors: Record<string, { bg: string; color: string }> = {
+    COMPLETED: { bg: 'rgba(34,197,94,0.12)', color: '#22c55e' },
+    PENDING:   { bg: 'rgba(251,191,36,0.12)', color: '#fbbf24' },
+    FAILED:    { bg: 'rgba(239,68,68,0.12)', color: '#ef4444' },
+    REFUNDED:  { bg: 'rgba(148,163,184,0.12)', color: '#94a3b8' },
+  }
+  const c = colors[status] ?? { bg: 'rgba(255,255,255,0.06)', color: '#888' }
+  return (
+    <Box sx={{ display: 'inline-flex', px: 1.25, py: 0.25, borderRadius: '5px', fontSize: '10px', fontWeight: 700, ...c }}>
+      {status}
+    </Box>
+  )
+}
+
 export default function InvestmentsSection({
   isPositionsExpanded = false,
   onTogglePositions,
 }: InvestmentsSectionProps) {
   const router = useRouter()
-  const theme = useTheme()
   const [investments, setInvestments] = useState<Investment[]>([])
   const [loading, setLoading] = useState(true)
   const [positions, setPositions] = useState<Array<{ id: string; user_id: string; symbol: string; shares: number; avg_cost: number }>>([])
 
   useEffect(() => {
+    const fetchInvestments = async () => {
+      try {
+        const response = await fetch('/api/investments')
+        if (response.ok) {
+          const data = await response.json()
+          setInvestments(data.investments || [])
+        }
+      } catch (error) {
+        console.error('Error fetching investments:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    const fetchPositions = async () => {
+      try {
+        const resp = await fetch('/api/trading/positions')
+        if (resp.ok) {
+          const data = await resp.json()
+          setPositions(data.positions || [])
+        }
+      } catch (err) {
+        console.error('Error fetching trading positions:', err)
+      }
+    }
     fetchInvestments()
     fetchPositions()
   }, [])
 
-  const fetchInvestments = async () => {
-    try {
-      const response = await fetch('/api/investments')
-      if (response.ok) {
-        const data = await response.json()
-        setInvestments(data.investments || [])
-      }
-    } catch (error) {
-      console.error('Error fetching investments:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchPositions = async () => {
-    try {
-      const resp = await fetch('/api/trading/positions')
-      if (resp.ok) {
-        const data = await resp.json()
-        setPositions(data.positions || [])
-      }
-    } catch (err) {
-      console.error('Error fetching trading positions:', err)
-    }
-  }
-
-  // Group investments by asset type (marketplace / secondary trading only)
-  const secondaryTradingInvestments = investments.filter(
-    (inv) => inv.asset_type === 'SECONDARY_TRADING'
-  )
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(amount)
-  }
-
-  const getPaymentMethodLabel = (type: string) => {
-    switch (type) {
-      case 'TZERO_BALANCE':
-        return 'tZERO Balance'
-      case 'ACH':
-        return 'Bank Account'
-      case 'CREDIT_CARD':
-        return 'Credit Card'
-      default:
-        return type
-    }
-  }
-
+  const secondaryTradingInvestments = investments.filter((inv) => inv.asset_type === 'SECONDARY_TRADING')
   const hasPositions = secondaryTradingInvestments.length > 0 || positions.length > 0
+
+  // Column header row
+  const ColHeaders = ({ cols }: { cols: string[] }) => (
+    <Box sx={{
+      display: 'grid', gridTemplateColumns: `repeat(${cols.length}, 1fr)`,
+      px: 3, py: 1, borderBottom: '1px solid rgba(255,255,255,0.05)',
+    }}>
+      {cols.map((c) => (
+        <Typography key={c} sx={{ color: '#444', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{c}</Typography>
+      ))}
+    </Box>
+  )
 
   if (loading) {
     return (
-      <Box className={styles.investmentsSection}>
-        <Typography variant="h6" className={styles.sectionTitle}>
-          MY POSITIONS
-        </Typography>
-        <Paper className={styles.investmentsCard}>
-          <Typography variant="body2" sx={{ color: '#888888', textAlign: 'center', py: 4 }}>
-            Loading investments...
-          </Typography>
-        </Paper>
-      </Box>
+      <Paper sx={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, p: 3 }}>
+        <Typography sx={{ color: '#444', fontSize: '13px', textAlign: 'center' }}>Loading positions…</Typography>
+      </Paper>
     )
   }
 
   if (!hasPositions) {
     return (
-      <Box className={styles.investmentsSection}>
-        <Typography variant="h6" className={styles.sectionTitle}>
-          MY POSITIONS
-        </Typography>
-        <Paper className={styles.investmentsCard}>
-          <Box className={styles.illustrationContainer}>
-            <InvestmentLookupIllustration />
-          </Box>
-          <Typography variant="h6" className={styles.investmentsTitle}>
-            Let&apos;s find your first investment!
-          </Typography>
-          <Button
-            variant="contained"
-            className={styles.exploreButton}
-            onClick={() => router.push('/investing/secondary-trading')}
-          >
-            Explore Opportunities
-          </Button>
-        </Paper>
-      </Box>
+      <Paper sx={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, p: 4, textAlign: 'center' }}>
+        <Box sx={{ width: 48, height: 48, borderRadius: '12px', backgroundColor: 'rgba(0,255,136,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+          <TrendingUp sx={{ color: '#00ff88', fontSize: 24 }} />
+        </Box>
+        <Typography sx={{ color: '#ccc', fontWeight: 600, mb: 0.5 }}>No positions yet</Typography>
+        <Typography sx={{ color: '#444', fontSize: '13px', mb: 2.5 }}>Start trading to build your portfolio</Typography>
+        <Button
+          variant="contained"
+          onClick={() => router.push('/investing/secondary-trading')}
+          sx={{
+            backgroundColor: '#00ff88', color: '#000', fontWeight: 700, fontSize: '13px',
+            borderRadius: '8px', px: 3, textTransform: 'none',
+            '&:hover': { backgroundColor: '#00e07a' },
+          }}
+        >
+          Explore Markets
+        </Button>
+      </Paper>
     )
   }
 
   return (
-    <Box className={styles.investmentsSection}>
-      {/* My Positions Section - Collapsible */}
-      {hasPositions && (
-        <Paper className={styles.collapsibleSection}>
-          <Box 
-            className={styles.sectionHeader}
-            onClick={onTogglePositions}
-            sx={{ cursor: onTogglePositions ? 'pointer' : 'default' }}
-          >
-            <Typography variant="h6" className={styles.categoryTitle}>
-              My Positions
-            </Typography>
-            <IconButton size="small" sx={{ color: '#ffffff' }}>
-              {isPositionsExpanded ? <ExpandLess /> : <ExpandMore />}
-            </IconButton>
-          </Box>
+    <Paper sx={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, overflow: 'hidden' }}>
+      {/* Collapsible header */}
+      <Box
+        onClick={onTogglePositions}
+        sx={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          px: 3, py: 2, cursor: onTogglePositions ? 'pointer' : 'default',
+          borderBottom: isPositionsExpanded ? '1px solid rgba(255,255,255,0.06)' : 'none',
+          '&:hover': onTogglePositions ? { backgroundColor: 'rgba(255,255,255,0.02)' } : {},
+        }}
+      >
+        <Typography sx={{ color: '#555', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+          My Positions
+        </Typography>
+        <IconButton size="small" sx={{ color: '#555', p: 0.25 }}>
+          {isPositionsExpanded ? <ExpandLess sx={{ fontSize: 18 }} /> : <ExpandMore sx={{ fontSize: 18 }} />}
+        </IconButton>
+      </Box>
 
-          {isPositionsExpanded && (
-            <Box className={styles.tableContainer}>
-              {/* Secondary Trading Positions */}
-              {secondaryTradingInvestments.length > 0 && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" sx={{ color: '#ffffff', fontWeight: 600, mb: 2 }}>
-                    Marketplace
-                  </Typography>
-                  <TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell sx={{ color: '#888888', fontWeight: 600, borderColor: 'rgba(255, 255, 255, 0.1)' }}>Asset</TableCell>
-                          <TableCell sx={{ color: '#888888', fontWeight: 600, borderColor: 'rgba(255, 255, 255, 0.1)' }}>Amount</TableCell>
-                          <TableCell sx={{ color: '#888888', fontWeight: 600, borderColor: 'rgba(255, 255, 255, 0.1)' }}>Payment Method</TableCell>
-                          <TableCell sx={{ color: '#888888', fontWeight: 600, borderColor: 'rgba(255, 255, 255, 0.1)' }}>Date</TableCell>
-                          <TableCell sx={{ color: '#888888', fontWeight: 600, borderColor: 'rgba(255, 255, 255, 0.1)' }}>Status</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {secondaryTradingInvestments.map((investment) => (
-                          <TableRow key={investment.id} sx={{ '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.03)' } }}>
-                            <TableCell sx={{ color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.1)' }}>{investment.asset_title}</TableCell>
-                            <TableCell sx={{ color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.1)' }}>{formatCurrency(investment.amount)}</TableCell>
-                            <TableCell sx={{ color: '#888888', borderColor: 'rgba(255, 255, 255, 0.1)' }}>{getPaymentMethodLabel(investment.payment_method_type)}</TableCell>
-                            <TableCell sx={{ color: '#888888', borderColor: 'rgba(255, 255, 255, 0.1)' }}>{formatDate(investment.created_at)}</TableCell>
-                            <TableCell sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-                              <Chip
-                                label={investment.payment_status}
-                                size="small"
-                                sx={{
-                                  backgroundColor: investment.payment_status === 'COMPLETED' 
-                                    ? 'rgba(0, 255, 136, 0.2)' 
-                                    : investment.payment_status === 'PENDING'
-                                    ? 'rgba(255, 193, 7, 0.2)'
-                                    : 'rgba(255, 77, 77, 0.2)',
-                                  color: investment.payment_status === 'COMPLETED'
-                                    ? theme.palette.primary.main
-                                    : investment.payment_status === 'PENDING'
-                                    ? '#ffc107'
-                                    : '#ff4d4d',
-                                  fontSize: '11px',
-                                  fontWeight: 600,
-                                  height: 24,
-                                }}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+      {isPositionsExpanded && (
+        <Box>
+          {/* Marketplace investments */}
+          {secondaryTradingInvestments.length > 0 && (
+            <Box>
+              <Box sx={{ px: 3, pt: 2, pb: 1 }}>
+                <Typography sx={{ color: '#444', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Marketplace</Typography>
+              </Box>
+              <ColHeaders cols={['Asset', 'Amount', 'Method', 'Date', 'Status']} />
+              {secondaryTradingInvestments.map((inv, idx, arr) => (
+                <Box
+                  key={inv.id}
+                  sx={{
+                    display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)',
+                    alignItems: 'center', px: 3, py: 1.5,
+                    borderBottom: idx < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.02)' },
+                  }}
+                >
+                  <Typography sx={{ color: '#ccc', fontSize: '13px', fontWeight: 600 }}>{inv.asset_title}</Typography>
+                  <Typography sx={{ color: '#fff', fontSize: '13px', fontFamily: 'monospace' }}>{fmtCurrency(inv.amount)}</Typography>
+                  <Typography sx={{ color: '#555', fontSize: '12px' }}>{getPaymentLabel(inv.payment_method_type)}</Typography>
+                  <Typography sx={{ color: '#555', fontSize: '12px' }}>{fmtDate(inv.created_at)}</Typography>
+                  <StatusPill status={inv.payment_status} />
                 </Box>
-              )}
-
-              {/* Trading Positions (from matching engine) */}
-              {positions.length > 0 && (
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="subtitle1" sx={{ color: '#ffffff', fontWeight: 600, mb: 2 }}>
-                    Trading Positions
-                  </Typography>
-                  <TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell sx={{ color: '#888888', fontWeight: 600, borderColor: 'rgba(255, 255, 255, 0.1)' }}>Symbol</TableCell>
-                          <TableCell sx={{ color: '#888888', fontWeight: 600, borderColor: 'rgba(255, 255, 255, 0.1)' }}>Shares</TableCell>
-                          <TableCell sx={{ color: '#888888', fontWeight: 600, borderColor: 'rgba(255, 255, 255, 0.1)' }}>Avg Cost</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {positions.map((p) => (
-                          <TableRow key={p.id} sx={{ '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.03)' } }}>
-                            <TableCell sx={{ color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.1)' }}>{p.symbol}</TableCell>
-                            <TableCell sx={{ color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.1)' }}>{p.shares}</TableCell>
-                            <TableCell sx={{ color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.1)' }}>{formatCurrency ? formatCurrency(p.avg_cost) : `$${p.avg_cost.toFixed(2)}`}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Box>
-              )}
+              ))}
             </Box>
           )}
-        </Paper>
-      )}
 
-    </Box>
+          {/* Trading positions */}
+          {positions.length > 0 && (
+            <Box sx={{ borderTop: secondaryTradingInvestments.length > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+              <Box sx={{ px: 3, pt: 2, pb: 1 }}>
+                <Typography sx={{ color: '#444', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Trading Positions</Typography>
+              </Box>
+              <ColHeaders cols={['Symbol', 'Shares', 'Avg Cost', 'Value']} />
+              {positions.map((p, idx, arr) => (
+                <Box
+                  key={p.id}
+                  sx={{
+                    display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+                    alignItems: 'center', px: 3, py: 1.5,
+                    borderBottom: idx < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.02)' },
+                  }}
+                >
+                  <Typography sx={{ color: '#ccc', fontSize: '13px', fontWeight: 700, fontFamily: 'monospace' }}>{p.symbol}</Typography>
+                  <Typography sx={{ color: '#fff', fontSize: '13px', fontFamily: 'monospace' }}>{p.shares}</Typography>
+                  <Typography sx={{ color: '#fff', fontSize: '13px', fontFamily: 'monospace' }}>{fmtCurrency(p.avg_cost)}</Typography>
+                  <Typography sx={{ color: '#00ff88', fontSize: '13px', fontFamily: 'monospace' }}>{fmtCurrency(p.shares * p.avg_cost)}</Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
+      )}
+    </Paper>
   )
 }
+

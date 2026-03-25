@@ -57,7 +57,9 @@ export default function AccountLayout({ children }: AccountLayoutProps) {
 
       {/* Main Content */}
       <Box className={styles.mainContent}>
-        {children}
+        <Box className={styles.mainContentInner}>
+          {children}
+        </Box>
       </Box>
     </Box>
   )

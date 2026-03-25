@@ -1,10 +1,8 @@
 'use client'
 
-import { Box, Typography, Button, Paper, Grid } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { Box, Typography, Button, Paper } from '@mui/material'
 import { useRouter } from 'next/navigation'
 import { TrendingUp, AccountBalance } from '@mui/icons-material'
-import styles from './PortfolioSummaryCard.module.css'
 
 interface PortfolioSummaryCardProps {
   totalValue: number
@@ -19,19 +17,13 @@ export default function PortfolioSummaryCard({
   cashAvailable,
   onInvestedClick,
 }: PortfolioSummaryCardProps) {
-  const theme = useTheme()
   const router = useRouter()
 
   const handleDepositClick = async () => {
     try {
       const response = await fetch('/api/payment-methods')
-      if (response.status === 401) {
-        router.push('/auth')
-        return
-      }
-      if (!response.ok) {
-        return
-      }
+      if (response.status === 401) { router.push('/auth'); return }
+      if (!response.ok) return
       const data = await response.json()
       const hasMethods = Array.isArray(data.paymentMethods) && data.paymentMethods.length > 0
       router.push(hasMethods ? '/account/banking/deposit' : '/account/banking/add-payment-method')
@@ -40,88 +32,106 @@ export default function PortfolioSummaryCard({
     }
   }
 
+  const fmt = (n: number) =>
+    n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 })
+
   return (
-    <Paper className={styles.card}>
-      <Box className={styles.header}>
-        <Typography variant="h6" className={styles.title}>
+    <Paper sx={{
+      backgroundColor: '#111',
+      border: '1px solid rgba(255,255,255,0.07)',
+      borderRadius: 2,
+      p: 3,
+    }}>
+      {/* Header row */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <Typography sx={{ color: '#555', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
           Portfolio Overview
         </Typography>
+        <Button
+          onClick={handleDepositClick}
+          size="small"
+          variant="contained"
+          sx={{
+            backgroundColor: '#00ff88', color: '#000', fontWeight: 700,
+            fontSize: '12px', textTransform: 'none', px: 2, py: 0.75, borderRadius: '7px',
+            '&:hover': { backgroundColor: '#00cc6a' },
+          }}
+        >
+          + Deposit
+        </Button>
       </Box>
 
-      <Box className={styles.content}>
-        <Box className={styles.mainValue}>
-          <Typography variant="h3" className={styles.totalValue}>
-            ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      {/* Two-column body: total value left, stats right */}
+      <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        {/* Left — total */}
+        <Box sx={{ flex: '1 1 200px' }}>
+          <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '38px', lineHeight: 1, letterSpacing: '-1px' }}>
+            {fmt(totalValue)}
           </Typography>
-          <Typography variant="body2" className={styles.totalLabel}>
-            Total Portfolio Value
-          </Typography>
+          <Typography sx={{ color: '#444', fontSize: '12px', mt: 0.75 }}>Total Portfolio Value</Typography>
         </Box>
 
-        <Grid container spacing={2} className={styles.statsGrid}>
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <Box 
-              className={styles.statCard}
-              onClick={onInvestedClick}
-              sx={{
-                cursor: onInvestedClick ? 'pointer' : 'default',
-                '&:hover': onInvestedClick ? {
-                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                  borderColor: 'rgba(255, 255, 255, 0.15)',
-                } : {},
-              }}
-            >
-              <Box className={styles.statIcon} sx={{ backgroundColor: 'rgba(0, 188, 212, 0.15)' }}>
-                <TrendingUp sx={{ color: '#00bcd4', fontSize: 24 }} />
-              </Box>
-              <Box className={styles.statContent}>
-                <Typography variant="body2" className={styles.statLabel}>
-                  Invested
-                </Typography>
-                <Typography variant="h6" className={styles.statValue}>
-                  ${investedAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </Typography>
-              </Box>
+        {/* Right — stat cards */}
+        <Box sx={{ flex: '1 1 300px', display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          {/* Invested */}
+          <Box
+            onClick={onInvestedClick}
+            sx={{
+              flex: '1 1 130px', display: 'flex', alignItems: 'center', gap: 1.5,
+              p: 2, borderRadius: '10px',
+              backgroundColor: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              cursor: onInvestedClick ? 'pointer' : 'default',
+              transition: 'background-color 0.15s, border-color 0.15s',
+              '&:hover': onInvestedClick ? {
+                backgroundColor: 'rgba(255,255,255,0.055)',
+                borderColor: 'rgba(255,255,255,0.1)',
+              } : {},
+            }}
+          >
+            <Box sx={{
+              width: 34, height: 34, borderRadius: '9px', flexShrink: 0,
+              backgroundColor: 'rgba(0,188,212,0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <TrendingUp sx={{ color: '#00bcd4', fontSize: 17 }} />
             </Box>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <Box className={styles.statCard}>
-              <Box className={styles.statIcon} sx={{ backgroundColor: 'rgba(136, 136, 136, 0.15)' }}>
-                <AccountBalance sx={{ color: '#888888', fontSize: 24 }} />
-              </Box>
-              <Box className={styles.statContent}>
-                <Typography variant="body2" className={styles.statLabel}>
-                  Cash Available
-                </Typography>
-                <Typography variant="h6" className={styles.statValue}>
-                  ${cashAvailable.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </Typography>
-              </Box>
+            <Box>
+              <Typography sx={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.25 }}>
+                Invested
+              </Typography>
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '15px' }}>
+                {fmt(investedAmount)}
+              </Typography>
             </Box>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} sm={6} md={4} lg={3}>
-            <Button
-              variant="contained"
-              fullWidth
-              className={styles.depositButton}
-              onClick={handleDepositClick}
-              sx={{
-                backgroundColor: theme.palette.primary.main,
-                color: '#000000',
-                fontWeight: 600,
-                py: 2,
-                '&:hover': {
-                  backgroundColor: '#00cc6a',
-                },
-              }}
-            >
-              Deposit Funds
-            </Button>
-          </Grid>
-        </Grid>
+          {/* Cash */}
+          <Box sx={{
+            flex: '1 1 130px', display: 'flex', alignItems: 'center', gap: 1.5,
+            p: 2, borderRadius: '10px',
+            backgroundColor: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.06)',
+          }}>
+            <Box sx={{
+              width: 34, height: 34, borderRadius: '9px', flexShrink: 0,
+              backgroundColor: 'rgba(136,136,136,0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <AccountBalance sx={{ color: '#888', fontSize: 17 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.25 }}>
+                Cash Available
+              </Typography>
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '15px' }}>
+                {fmt(cashAvailable)}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
       </Box>
     </Paper>
   )
 }
+
