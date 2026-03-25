@@ -47,6 +47,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid limit price' }, { status: 400 })
     }
 
+    // Ensure a trading balance row exists for the user (so updates are straightforward)
+    const ensureBal = db.prepare("INSERT OR IGNORE INTO trading_balances (id, user_id, cash_balance, created_at, updated_at) VALUES (?, ?, ?, datetime('now'), datetime('now'))")
+    ensureBal.run(crypto.randomUUID(), userId, 0)
+
     // Simple pre-checks: cash for buys, shares for sells
     if (side === 'buy') {
       const notional = qty * price
