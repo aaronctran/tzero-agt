@@ -34,9 +34,11 @@ export default function InvestmentsSection({
   const theme = useTheme()
   const [investments, setInvestments] = useState<Investment[]>([])
   const [loading, setLoading] = useState(true)
+  const [positions, setPositions] = useState<Array<{ id: string; user_id: string; symbol: string; shares: number; avg_cost: number }>>([])
 
   useEffect(() => {
     fetchInvestments()
+    fetchPositions()
   }, [])
 
   const fetchInvestments = async () => {
@@ -53,6 +55,17 @@ export default function InvestmentsSection({
     }
   }
 
+  const fetchPositions = async () => {
+    try {
+      const resp = await fetch('/api/trading/positions')
+      if (resp.ok) {
+        const data = await resp.json()
+        setPositions(data.positions || [])
+      }
+    } catch (err) {
+      console.error('Error fetching trading positions:', err)
+    }
+  }
 
   // Group investments by asset type (marketplace / secondary trading only)
   const secondaryTradingInvestments = investments.filter(
@@ -89,7 +102,7 @@ export default function InvestmentsSection({
     }
   }
 
-  const hasPositions = secondaryTradingInvestments.length > 0
+  const hasPositions = secondaryTradingInvestments.length > 0 || positions.length > 0
 
   if (loading) {
     return (
@@ -196,6 +209,35 @@ export default function InvestmentsSection({
                                 }}
                               />
                             </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              )}
+
+              {/* Trading Positions (from matching engine) */}
+              {positions.length > 0 && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle1" sx={{ color: '#ffffff', fontWeight: 600, mb: 2 }}>
+                    Trading Positions
+                  </Typography>
+                  <TableContainer>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ color: '#888888', fontWeight: 600, borderColor: 'rgba(255, 255, 255, 0.1)' }}>Symbol</TableCell>
+                          <TableCell sx={{ color: '#888888', fontWeight: 600, borderColor: 'rgba(255, 255, 255, 0.1)' }}>Shares</TableCell>
+                          <TableCell sx={{ color: '#888888', fontWeight: 600, borderColor: 'rgba(255, 255, 255, 0.1)' }}>Avg Cost</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {positions.map((p) => (
+                          <TableRow key={p.id} sx={{ '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.03)' } }}>
+                            <TableCell sx={{ color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.1)' }}>{p.symbol}</TableCell>
+                            <TableCell sx={{ color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.1)' }}>{p.shares}</TableCell>
+                            <TableCell sx={{ color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.1)' }}>{formatCurrency ? formatCurrency(p.avg_cost) : `$${p.avg_cost.toFixed(2)}`}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
