@@ -18,8 +18,6 @@ import {
   Box,
   Container,
   Typography,
-  Grid,
-  Paper,
   TextField,
   InputAdornment,
   IconButton,
@@ -27,12 +25,10 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Stack,
-  Chip,
+  Paper,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import ClearIcon from '@mui/icons-material/Clear'
-import { useTheme } from '@mui/material/styles'
 import { useAuth } from '@/contexts/AuthContext'
 import secondaryTradingAssets from '@/data/secondaryTradingAssets.json'
 import { formatCurrency, getSecondaryTradingSymbol, getSeededColor } from '@/lib/investmentUtils'
@@ -53,7 +49,6 @@ type Asset = {
 
 export default function SecondaryTradingPage() {
   const router = useRouter()
-  const theme = useTheme()
   const { user, isAuthenticated } = useAuth()
   const allAssets = secondaryTradingAssets.investments as Asset[]
 
@@ -113,161 +108,209 @@ export default function SecondaryTradingPage() {
   }, [allAssets, query, category, sortBy])
 
   return (
-    <Box sx={{ minHeight: '100vh' }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#0a0a0a' }}>
       <Header />
 
-      <Container maxWidth="lg" sx={{ pt: { xs: '100px', sm: '120px' }, pb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#ffffff', mb: 1 }}>
-          Secondary Marketplace
-        </Typography>
-        <Typography sx={{ color: '#888888', mb: 4 }}>
-          Browse and trade digital securities on the secondary market.
-        </Typography>
+      <Container maxWidth="xl" sx={{ pt: { xs: '100px', sm: '120px' }, pb: 6 }}>
 
-        {/* Search & Filters */}
-        <Paper sx={{ p: 2, mb: 3, border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 2 }}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-            <TextField
-              placeholder="Search by name, symbol or description"
-              size="small"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              sx={{ flex: 1, background: 'rgba(255,255,255,0.02)' }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: '#999' }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  query ? (
-                    <InputAdornment position="end">
-                      <IconButton size="small" onClick={() => setQuery('')}>
-                        <ClearIcon sx={{ color: '#999' }} />
-                      </IconButton>
-                    </InputAdornment>
-                  ) : null
-                ),
-              }}
-            />
+        {/* ── PAGE HEADER ───────────────────────────────────────────── */}
+        <Box sx={{ mb: 4 }}>
+          <Typography sx={{ fontWeight: 700, fontSize: '22px', color: '#fff', lineHeight: 1.2, mb: 0.5 }}>
+            Secondary Marketplace
+          </Typography>
+          <Typography sx={{ color: '#555', fontSize: '13px' }}>
+            Browse and trade digital securities on the secondary market.
+          </Typography>
+        </Box>
 
-            <FormControl size="small" sx={{ minWidth: 160 }}>
-              <InputLabel sx={{ color: '#ccc' }}>Category</InputLabel>
-              <Select
-                value={category}
-                label="Category"
-                onChange={(e) => setCategory(String(e.target.value))}
-                sx={{ color: '#fff' }}
-              >
-                {categories.map((c) => (
-                  <MenuItem key={c} value={c}>
-                    {formatCategoryLabel(c)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+        {/* ── SEARCH & FILTERS ──────────────────────────────────────── */}
+        <Box sx={{
+          display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center', mb: 3,
+          p: 2, backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2,
+        }}>
+          <TextField
+            placeholder="Search by name, symbol or description…"
+            size="small"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            sx={{
+              flex: '1 1 260px',
+              '& .MuiOutlinedInput-root': {
+                fontSize: '13px',
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                '& fieldset': { borderColor: 'rgba(255,255,255,0.08)' },
+                '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.15)' },
+              },
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: '#444', fontSize: 18 }} />
+                </InputAdornment>
+              ),
+              endAdornment: query ? (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setQuery('')} sx={{ p: 0.25 }}>
+                    <ClearIcon sx={{ color: '#444', fontSize: 16 }} />
+                  </IconButton>
+                </InputAdornment>
+              ) : null,
+            }}
+          />
 
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <InputLabel sx={{ color: '#ccc' }}>Sort</InputLabel>
-              <Select value={sortBy} label="Sort" onChange={(e) => setSortBy(String(e.target.value))}>
-                <MenuItem value="featured">Featured</MenuItem>
-                <MenuItem value="price-desc">Price: High → Low</MenuItem>
-                <MenuItem value="price-asc">Price: Low → High</MenuItem>
-                <MenuItem value="percent-desc">Performance: High → Low</MenuItem>
-                <MenuItem value="percent-asc">Performance: Low → High</MenuItem>
-              </Select>
-            </FormControl>
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel sx={{ fontSize: '13px' }}>Category</InputLabel>
+            <Select
+              value={category}
+              label="Category"
+              onChange={(e) => setCategory(String(e.target.value))}
+              sx={{ fontSize: '13px', backgroundColor: 'rgba(255,255,255,0.03)' }}
+            >
+              {categories.map((c) => (
+                <MenuItem key={c} value={c} sx={{ fontSize: '13px' }}>
+                  {formatCategoryLabel(c)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
-            <Box sx={{ ml: 'auto' }}>
-              <Stack direction="row" spacing={1}>
-                <Chip label={`Results: ${filteredAssets.length}`} size="small" />
-              </Stack>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel sx={{ fontSize: '13px' }}>Sort by</InputLabel>
+            <Select
+              value={sortBy}
+              label="Sort by"
+              onChange={(e) => setSortBy(String(e.target.value))}
+              sx={{ fontSize: '13px', backgroundColor: 'rgba(255,255,255,0.03)' }}
+            >
+              <MenuItem value="featured" sx={{ fontSize: '13px' }}>Featured</MenuItem>
+              <MenuItem value="price-desc" sx={{ fontSize: '13px' }}>Price: High → Low</MenuItem>
+              <MenuItem value="price-asc" sx={{ fontSize: '13px' }}>Price: Low → High</MenuItem>
+              <MenuItem value="percent-desc" sx={{ fontSize: '13px' }}>Performance: High → Low</MenuItem>
+              <MenuItem value="percent-asc" sx={{ fontSize: '13px' }}>Performance: Low → High</MenuItem>
+            </Select>
+          </FormControl>
+
+          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography sx={{ color: '#444', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              {filteredAssets.length} result{filteredAssets.length !== 1 ? 's' : ''}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* ── ASSET TABLE ───────────────────────────────────────────── */}
+        {filteredAssets.length === 0 ? (
+          <Box sx={{ py: 10, textAlign: 'center' }}>
+            <Typography sx={{ color: '#333', fontSize: '14px' }}>No assets match your search.</Typography>
+          </Box>
+        ) : (
+          <Paper sx={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, overflow: 'hidden' }}>
+
+            {/* Table header */}
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+              px: 2.5, py: 1.25,
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}>
+              {['Asset', 'Price', 'Change', 'Volume', ''].map((h) => (
+                <Typography key={h} sx={{ color: '#444', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 600 }}>
+                  {h}
+                </Typography>
+              ))}
             </Box>
-          </Stack>
-        </Paper>
 
-        {/* Asset Cards */}
-        <Grid container spacing={2}>
-          {filteredAssets.map((asset) => {
-            const symbol = getSecondaryTradingSymbol(asset.title, asset.symbol)
-            return (
-              <Grid item xs={12} sm={6} md={4} key={asset.id}>
-                <Paper
+            {/* Rows */}
+            {filteredAssets.map((asset, idx) => {
+              const symbol = getSecondaryTradingSymbol(asset.title, asset.symbol)
+              const isLast = idx === filteredAssets.length - 1
+              const dailyHistory = (asset as any).dailyHistory
+              const lastVol = dailyHistory?.length
+                ? dailyHistory[dailyHistory.length - 1].volume
+                : null
+              const displayVolume = lastVol ?? (asset as any).avgVolume ?? asset.volume ?? '—'
+
+              return (
+                <Box
+                  key={asset.id}
                   onClick={() => router.push(`/investing/secondary-trading/${asset.id}`)}
                   sx={{
-                    p: 2.5,
-                    border: '1px dashed rgba(255,255,255,0.15)',
-                    borderRadius: 2,
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr',
+                    alignItems: 'center',
+                    px: 2.5, py: 1.75,
+                    borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)',
                     cursor: 'pointer',
-                    '&:hover': { borderColor: 'rgba(0, 255, 136, 0.3)' },
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
+                    transition: 'background-color 0.12s',
+                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)' },
                   }}
                 >
-                  <Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                      <Box sx={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: '8px',
-                        backgroundColor: getSeededColor(symbol),
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}>
-                        <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '13px' }}>
-                          {symbol.slice(0, 2)}
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography sx={{ color: '#ffffff', fontWeight: 600, fontSize: '14px' }}>
+                  {/* Asset identity */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden' }}>
+                    <Box sx={{
+                      width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
+                      backgroundColor: getSeededColor(symbol),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '12px' }}>
+                        {symbol.slice(0, 2)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ overflow: 'hidden' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '13px', whiteSpace: 'nowrap' }}>
                           {asset.title}
                         </Typography>
-                        <Typography sx={{ color: '#888', fontSize: '12px' }}>{symbol}</Typography>
+                        <Box sx={{ px: 0.75, py: 0.1, borderRadius: '5px', backgroundColor: 'rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                          <Typography sx={{ color: '#666', fontSize: '10px', fontWeight: 600, letterSpacing: '0.04em' }}>
+                            {symbol}
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
-
-                    <Typography sx={{ color: '#aaa', fontSize: '13px', mb: 2 }} noWrap>
-                      {asset.companyDescription}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mt: 2 }}>
-                    <Box>
-                      <Typography sx={{ color: '#ffffff', fontWeight: 700, fontSize: '18px' }}>
-                        {formatCurrency(asset.currentValue)}
+                      <Typography sx={{
+                        color: '#444', fontSize: '11px', mt: 0.25,
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>
+                        {formatCategoryLabel(asset.category)}
                       </Typography>
-                      <Typography sx={{ color: '#999', fontSize: '12px' }}>{`Volume: ${asset.volume}`}</Typography>
                     </Box>
+                  </Box>
 
+                  {/* Price */}
+                  <Typography sx={{ color: '#ddd', fontSize: '13px', fontWeight: 600, fontFamily: 'monospace' }}>
+                    {formatCurrency(asset.currentValue)}
+                  </Typography>
+
+                  {/* Change */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <Typography sx={{
-                      color: asset.isPositive ? theme.palette.primary.main : '#ff4d4d',
-                      fontWeight: 600,
-                      fontSize: '13px',
+                      color: asset.isPositive ? '#22c55e' : '#ef4444',
+                      fontSize: '13px', fontWeight: 600,
                     }}>
-                      {asset.isPositive ? '+' : ''}{asset.performancePercent.toFixed(2)}%
+                      {asset.isPositive ? '▲' : '▼'} {Math.abs(asset.performancePercent).toFixed(2)}%
                     </Typography>
                   </Box>
-                </Paper>
-              </Grid>
-            )
-          })}
-        </Grid>
 
-        {/* Small hint box - remove when complete */}
-        <Paper sx={{
-          mt: 4,
-          p: 2.5,
-          border: '1px dashed rgba(255, 200, 0, 0.25)',
-          borderRadius: 2,
-          backgroundColor: 'rgba(255, 200, 0, 0.02)',
-        }}>
-          <Typography sx={{ color: '#998a00', fontSize: '13px', lineHeight: 1.7 }}>
-            The layout above is interactive: search, filter by category, sort results and click an asset to open its detail page.
-          </Typography>
-        </Paper>
+                  {/* Volume */}
+                  <Typography sx={{ color: '#555', fontSize: '12px', fontFamily: 'monospace' }}>
+                    {typeof displayVolume === 'number' ? displayVolume.toLocaleString() : displayVolume}
+                  </Typography>
+
+                  {/* CTA */}
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Box sx={{
+                      px: 1.5, py: 0.5, borderRadius: '6px',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.2)' },
+                    }}>
+                      <Typography sx={{ color: '#aaa', fontSize: '11px', fontWeight: 600 }}>Trade →</Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              )
+            })}
+          </Paper>
+        )}
+
       </Container>
     </Box>
   )

@@ -31,9 +31,15 @@ import {
   List,
   ListItem,
   ListItemText,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { ArrowBack } from '@mui/icons-material'
+import { Edit, Cancel } from '@mui/icons-material'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatCurrency, getSecondaryTradingSymbol, slugify, getSeededColor } from '@/lib/investmentUtils'
 import secondaryTradingAssets from '@/data/secondaryTradingAssets.json'
@@ -75,6 +81,10 @@ export default function SecondaryTradingDetailPage() {
   const [quantity, setQuantity] = useState<number>(1)
   const [limitPrice, setLimitPrice] = useState<number | ''>('')
   const [submitting, setSubmitting] = useState(false)
+  const [editingOrder, setEditingOrder] = useState<any | null>(null)
+  const [editQty, setEditQty] = useState<number | ''>('')
+  const [editPrice, setEditPrice] = useState<number | ''>('')
+  const [cancellingOrderIds, setCancellingOrderIds] = useState<Record<string, boolean>>({})
 
   // Generate a simple order book if templates exist, otherwise create around currentValue
   const orderBook = useMemo(() => {
@@ -89,9 +99,25 @@ export default function SecondaryTradingDetailPage() {
       ;(tpl.bids || []).forEach((p: number, idx: number) => bids.push({ price: p * mult * (asset.basePrice || 1), size: Math.max(1, Math.round((idx + 1) * 8)) }))
     } else {
       // synthetic book: 5 levels
+      // deterministic pseudo-random generator (stable between server and client)
+      const seedBase = String(asset.id || asset.title || symbol)
+      const seededRandom = (seedStr: string, n: number) => {
+        // simple FNV-1a hash variant then xorshift to produce a stable 0..1 value
+        let h = 2166136261 >>> 0
+        for (let j = 0; j < seedStr.length; j++) h = Math.imul(h ^ seedStr.charCodeAt(j), 16777619)
+        h = (h + n) >>> 0
+        // xorshift
+        h ^= h << 13
+        h ^= h >>> 7
+        h ^= h << 17
+        return (h >>> 0) / 4294967295
+      }
+
       for (let i = 1; i <= 5; i++) {
-        asks.push({ price: +(mid + i * (mid * 0.01)).toFixed(2), size: Math.round(Math.random() * 50) + 1 })
-        bids.push({ price: +(mid - i * (mid * 0.01)).toFixed(2), size: Math.round(Math.random() * 50) + 1 })
+        const rndA = seededRandom(seedBase, i * 2)
+        const rndB = seededRandom(seedBase, i * 2 + 1)
+        asks.push({ price: +(mid + i * (mid * 0.01)).toFixed(2), size: Math.round(rndA * 50) + 1 })
+        bids.push({ price: +(mid - i * (mid * 0.01)).toFixed(2), size: Math.round(rndB * 50) + 1 })
       }
     }
 
@@ -140,11 +166,21 @@ export default function SecondaryTradingDetailPage() {
 
         if (ordersRes.ok) {
           const json = await ordersRes.json()
-          setOrders(Array.isArray(json) ? json : json.orders ?? [])
+          const allOrders = Array.isArray(json) ? json : json.orders ?? []
+          // keep only open orders for this symbol
+          const filtered = allOrders.filter((o: any) => {
+            const symbolMatch = (o.symbol && String(o.symbol) === String(symbol)) || o.assetId === asset.id
+            const isOpen = !['Completed', 'Cancelled'].includes(o.status)
+            return symbolMatch && isOpen
+          })
+          setOrders(filtered)
         }
         if (positionsRes.ok) {
           const json = await positionsRes.json()
-          setPositions(Array.isArray(json) ? json : json.positions ?? [])
+          const allPositions = Array.isArray(json) ? json : json.positions ?? []
+          // trading_holdings rows use `symbol`, `shares`, and `avg_cost`
+          const filteredPos = allPositions.filter((p: any) => String(p.symbol) === String(symbol))
+          setPositions(filteredPos)
         }
       } catch (e) {
         // ignore
@@ -154,7 +190,7 @@ export default function SecondaryTradingDetailPage() {
     return () => {
       mounted = false
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, symbol, asset.id])
 
   async function submitOrder() {
     if (!isAuthenticated) {
@@ -196,67 +232,208 @@ export default function SecondaryTradingDetailPage() {
     }
   }
 
+  async function handleCancel(orderId: string) {
+    // optimistic UI
+    setCancellingOrderIds((s) => ({ ...s, [orderId]: true }))
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: 'Cancelling' } : o)))
+    try {
+      const res = await fetch(`/api/trading/orders/${orderId}/cancel`, { method: 'POST' })
+      if (!res.ok) throw new Error('Cancel failed')
+      // remove cancelled order from list
+      setOrders((prev) => prev.filter((o) => o.id !== orderId))
+    } catch (e) {
+      console.error('Cancel failed', e)
+      // rollback
+      await refreshOrders()
+    } finally {
+      setCancellingOrderIds((s) => { const copy = { ...s }; delete copy[orderId]; return copy })
+    }
+  }
+
+  async function handleEdit(order: any) {
+    setEditingOrder(order)
+    setEditQty(order.quantity)
+    setEditPrice(order.price)
+  }
+
+  async function submitEdit() {
+    if (!editingOrder) return
+    const orderId = editingOrder.id
+    const payload: any = {}
+    if (editQty !== '') payload.quantity = Number(editQty)
+    if (editPrice !== '') payload.price = Number(editPrice)
+
+    // optimistic update: apply new quantity/price locally
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, quantity: payload.quantity ?? o.quantity, price: payload.price ?? o.price } : o)))
+
+    try {
+      // Call the complete endpoint with optional update payload so server updates then matches
+      const execRes = await fetch(`/api/trading/orders/${orderId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!execRes.ok) {
+        // If execution failed, refresh to show authoritative state
+        await refreshOrders()
+        await refreshPositions()
+        throw new Error('Execution failed')
+      }
+
+      const execJson = await execRes.json()
+
+      // Reflect the authoritative status from the server immediately
+      const matchStatus: string = execJson?.matchResult?.status ?? execJson?.order?.status ?? 'Completed'
+      const matchRemaining: number = execJson?.matchResult?.remaining ?? 0
+
+      // If order is Completed, remove it from the open orders list; otherwise update status
+      if (matchStatus === 'Completed') {
+        setOrders((prev) => prev.filter((o) => o.id !== orderId))
+      } else {
+        setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: matchStatus, remaining: matchRemaining } : o)))
+      }
+
+      // Refresh orders & positions to reflect fills, holdings and balances
+      await Promise.all([refreshOrders(), refreshPositions()])
+
+      setEditingOrder(null)
+    } catch (e) {
+      console.error('Edit+Execute failed', e)
+      // rollback by reloading orders/positions from server
+      await refreshOrders()
+      await refreshPositions()
+      setEditingOrder(null)
+    }
+  }
+
+  async function refreshOrders() {
+    try {
+      const res = await fetch('/api/trading/orders')
+      if (!res.ok) return
+      const data = await res.json()
+      const allOrders = Array.isArray(data) ? data : data.orders ?? []
+      const filtered = allOrders.filter((o: any) => {
+        const symbolMatch = (o.symbol && String(o.symbol) === String(symbol)) || o.assetId === asset.id
+        const isOpen = !['Completed', 'Cancelled'].includes(o.status)
+        return symbolMatch && isOpen
+      })
+      setOrders(filtered)
+    } catch (e) {
+      console.error('Error refreshing orders', e)
+    }
+  }
+
+  async function refreshPositions() {
+    try {
+      const resp = await fetch('/api/trading/positions')
+      if (!resp.ok) return
+      const data = await resp.json()
+      const allPositions = Array.isArray(data) ? data : data.positions ?? []
+      const filteredPos = allPositions.filter((p: any) => String(p.symbol) === String(symbol))
+      setPositions(filteredPos)
+    } catch (err) {
+      console.error('Error refreshing positions', err)
+    }
+  }
+
   return (
-    <Box sx={{ minHeight: '100vh' }}>
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#0a0a0a' }}>
       <Header />
 
-      <Container maxWidth="lg" sx={{ pt: { xs: '100px', sm: '120px' }, pb: 4 }}>
+      <Container maxWidth="xl" sx={{ pt: { xs: '100px', sm: '120px' }, pb: 6 }}>
+
+        {/* Back nav */}
         <Button
           startIcon={<ArrowBack />}
           onClick={() => router.push('/investing/secondary-trading')}
-          sx={{ color: '#ffffff', mb: 2, textTransform: 'none' }}
+          sx={{ color: '#666', mb: 3, textTransform: 'none', fontSize: '13px', '&:hover': { color: '#fff' } }}
         >
-          Back to Marketplace
+          Secondary Marketplace
         </Button>
 
-        {/* Asset Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-          <Box sx={{
-            width: 48, height: 48, borderRadius: '12px',
-            backgroundColor: getSeededColor(symbol),
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Typography sx={{ color: '#ffffff', fontWeight: 700, fontSize: '16px' }}>
-              {symbol.slice(0, 2)}
-            </Typography>
+        {/* ── ASSET HEADER ─────────────────────────────────────────── */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{
+              width: 52, height: 52, borderRadius: '14px',
+              backgroundColor: getSeededColor(symbol),
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '17px', letterSpacing: '-0.5px' }}>
+                {symbol.slice(0, 2)}
+              </Typography>
+            </Box>
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
+                  {asset.title}
+                </Typography>
+                <Box sx={{ px: 1, py: 0.25, borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <Typography sx={{ color: '#aaa', fontSize: '11px', fontWeight: 600, letterSpacing: '0.04em' }}>
+                    {symbol}
+                  </Typography>
+                </Box>
+                <Box sx={{ px: 1, py: 0.25, borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.04)' }}>
+                  <Typography sx={{ color: '#666', fontSize: '11px', textTransform: 'capitalize' }}>
+                    {asset.category}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mt: 0.75 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: '26px', color: '#fff', lineHeight: 1 }}>
+                  {formatCurrency(asset.currentValue)}
+                </Typography>
+                <Typography sx={{
+                  color: asset.isPositive ? '#22c55e' : '#ef4444',
+                  fontWeight: 600, fontSize: '14px',
+                }}>
+                  {asset.isPositive ? '▲' : '▼'} {Math.abs(asset.performancePercent).toFixed(2)}%
+                </Typography>
+              </Box>
+            </Box>
           </Box>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700, color: '#ffffff' }}>
-              {asset.title}
-            </Typography>
-            <Typography sx={{ color: '#888888' }}>
-              {symbol} &bull; {asset.category}
-            </Typography>
+
+          {/* Quick stats strip */}
+          <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+            {[
+              { label: 'Open', value: formatCurrency(asset.openPrice) },
+              { label: 'High', value: formatCurrency(asset.high) },
+              { label: 'Low', value: formatCurrency(asset.low) },
+              { label: 'Bid', value: formatCurrency(asset.bid) },
+              { label: 'Ask', value: formatCurrency(asset.ask) },
+              { label: 'Volume', value: asset.volume ?? asset.avgVolume ?? '—' },
+            ].map(({ label, value }) => (
+              <Box key={label} sx={{ textAlign: 'right' }}>
+                <Typography sx={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.25 }}>{label}</Typography>
+                <Typography sx={{ color: '#ddd', fontSize: '13px', fontWeight: 600 }}>{value}</Typography>
+              </Box>
+            ))}
           </Box>
         </Box>
 
-        <Typography variant="h3" sx={{ fontWeight: 700, color: '#ffffff', mt: 2 }}>
-          {formatCurrency(asset.currentValue)}
-        </Typography>
-        <Typography sx={{
-          color: asset.isPositive ? theme.palette.primary.main : '#ff4d4d',
-          fontWeight: 600, mb: 4,
-        }}>
-          {asset.isPositive ? '+' : ''}{asset.performancePercent.toFixed(2)}%
-        </Typography>
+        {/* ── MAIN GRID ─────────────────────────────────────────────── */}
+        <Grid container spacing={2.5}>
 
-        <Grid container spacing={3}>
-          {/* Left Column */}
-          <Grid item xs={12} md={8}>
-            <Paper sx={{ p: 3, border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 2, mb: 3 }}>
-              <Typography sx={{ color: '#fff', mb: 2 }}>Price chart</Typography>
+          {/* LEFT: chart + about + order book */}
+          <Grid item xs={12} lg={8}>
+
+            {/* Price chart */}
+            <Paper sx={{ p: 3, backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, mb: 2.5 }}>
+              <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '14px', mb: 2.5 }}>Price Chart</Typography>
               {sparklinePath ? (
                 (() => {
                   const history = asset.dailyHistory || []
                   const values: number[] = history.map((d: any) => Number(d.close ?? d.c ?? d[4] ?? 0))
                   if (!values.length) return null
 
-                  const w = 600
+                  const w = 860
                   const h = 200
-                  const leftMargin = 48
+                  const leftMargin = 56
                   const topMargin = 8
-                  const rightMargin = 24
-                  const bottomMargin = 40
+                  const rightMargin = 16
+                  const bottomMargin = 36
                   const svgW = leftMargin + w + rightMargin
                   const svgH = topMargin + h + bottomMargin
 
@@ -264,209 +441,328 @@ export default function SecondaryTradingDetailPage() {
                   const min = Math.min(...values)
                   const range = max - min || 1
 
-                  // scaled points (translated by leftMargin + topMargin for y)
-                  const points: { x: number; y: number; v: number; i: number }[] = values.map((v: number, i: number) => {
-                    const x = leftMargin + (i / (values.length - 1)) * w
-                    const y = topMargin + (h - ((v - min) / range) * h)
-                    return { x, y, v, i }
+                  const points: { x: number; y: number }[] = values.map((v: number, i: number) => ({
+                    x: leftMargin + (i / (values.length - 1)) * w,
+                    y: topMargin + (h - ((v - min) / range) * h),
+                  }))
+
+                  const pathD = `M${points.map((p) => `${p.x},${p.y}`).join(' L')}`
+                  // area fill path
+                  const areaD = `${pathD} L${points[points.length - 1].x},${topMargin + h} L${points[0].x},${topMargin + h} Z`
+
+                  const yTickCount = 4
+                  const yTicks = Array.from({ length: yTickCount + 1 }).map((_, ti) => {
+                    const frac = ti / yTickCount
+                    return { value: max - frac * range, y: topMargin + frac * h }
                   })
 
-                  const pathD: string = `M${points.map((p) => `${p.x},${p.y}`).join(' L')}`
-
-                  // y ticks (including top=max and bottom=min)
-                  const yTickCount = 3
-                  const yTicks: { value: number; y: number }[] = Array.from({ length: yTickCount + 1 }).map((_, ti) => {
-                    const frac = ti / yTickCount // 0..1 top->bottom
-                    const value = max - frac * range
-                    const y = topMargin + frac * h
-                    return { value, y }
-                  })
-
-                  // x ticks: start, middle, end
-                  const xIndices = [0, Math.floor((values.length - 1) / 2), values.length - 1]
+                  const xIndices = [0, Math.floor((values.length - 1) / 3), Math.floor((values.length - 1) * 2 / 3), values.length - 1]
                   const formatX = (d: any, idx: number) => {
-                    if (!d) return '' + (idx + 1)
-                    const maybeDate = d.date ?? d.t ?? d.time ?? d.x
+                    const maybeDate = d?.date ?? d?.t ?? d?.time ?? d?.x
                     if (maybeDate) {
                       try {
-                        const t = typeof maybeDate === 'number' && maybeDate.toString().length <= 10 ? maybeDate * 1000 : maybeDate
-                        const dt = new Date(t)
-                        return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-                      } catch {
-                        return String(maybeDate)
-                      }
+                        const t = typeof maybeDate === 'number' && String(maybeDate).length <= 10 ? maybeDate * 1000 : maybeDate
+                        return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                      } catch { return String(maybeDate) }
                     }
-                    return '' + (idx + 1)
+                    return `Day ${idx + 1}`
                   }
 
-                  const lastXiIndex = xIndices.length - 1
-
-                  // axis title positions
-                  const yTitleX = Math.max(12, leftMargin / 2)
-                  const yTitleY = topMargin + h / 2
-                  const xTitleX = leftMargin + w / 2
-                  const xTitleY = svgH - 8
+                  const gradientId = `chart-grad-${symbol}`
+                  const isUp = asset.isPositive
+                  const lineColor = isUp ? '#22c55e' : '#ef4444'
+                  const gradColor = isUp ? '#22c55e' : '#ef4444'
 
                   return (
-                    <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} preserveAspectRatio="xMinYMin meet">
-                      {/* background grid */}
-                      <rect x={0} y={0} width={svgW} height={svgH} fill="transparent" />
+                    <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                      <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} style={{ display: 'block', maxWidth: '100%' }}>
+                        <defs>
+                          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={gradColor} stopOpacity="0.18" />
+                            <stop offset="100%" stopColor={gradColor} stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
 
-                      {/* y grid lines and labels */}
-                      {yTicks.map((yt, i) => (
-                        <g key={`yt-${i}`}>
-                          <line x1={leftMargin} x2={svgW - rightMargin} y1={yt.y} y2={yt.y} stroke="rgba(255,255,255,0.04)" strokeWidth={1} />
-                          <text x={leftMargin - 8} y={yt.y + 4} fontSize={11} fill="#ccc" textAnchor="end">{formatCurrency(yt.value)}</text>
-                        </g>
-                      ))}
+                        {/* grid lines */}
+                        {yTicks.map((yt, i) => (
+                          <line key={i} x1={leftMargin} x2={svgW - rightMargin} y1={yt.y} y2={yt.y} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
+                        ))}
 
-                      {/* sparkline path */}
-                      <path d={pathD} fill="none" stroke={theme.palette.primary.main} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                        {/* area fill */}
+                        <path d={areaD} fill={`url(#${gradientId})`} />
 
-                      {/* x ticks and labels */}
-                      {xIndices.map((xi, i) => {
-                        const p = points[xi]
-                        if (!p) return null
-                        const label = formatX(history[xi], xi)
-                        const isFirst = i === 0
-                        const isLast = i === lastXiIndex
-                        const xPos = isFirst ? Math.max(p.x, leftMargin + 4) : isLast ? Math.min(p.x, svgW - rightMargin - 4) : p.x
-                        const anchor: 'start' | 'middle' | 'end' = isFirst ? 'start' : isLast ? 'end' : 'middle'
+                        {/* line */}
+                        <path d={pathD} fill="none" stroke={lineColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
 
-                        return (
-                          <g key={`xt-${i}`}>
-                            <line x1={p.x} x2={p.x} y1={topMargin + h} y2={topMargin + h + 6} stroke="rgba(255,255,255,0.06)" strokeWidth={1} />
-                            <text x={xPos} y={topMargin + h + 18} fontSize={11} fill="#ccc" textAnchor={anchor}>{label}</text>
-                          </g>
-                        )
-                      })}
+                        {/* y labels */}
+                        {yTicks.map((yt, i) => (
+                          <text key={i} x={leftMargin - 8} y={yt.y + 4} fontSize={10} fill="#555" textAnchor="end">{formatCurrency(yt.value)}</text>
+                        ))}
 
-                      {/* axes lines */}
-                      <line x1={leftMargin} y1={topMargin} x2={leftMargin} y2={topMargin + h} stroke="rgba(255,255,255,0.06)" />
-                      <line x1={leftMargin} y1={topMargin + h} x2={svgW - rightMargin} y2={topMargin + h} stroke="rgba(255,255,255,0.06)" />
-                    </svg>
+                        {/* x labels */}
+                        {xIndices.map((xi, i) => {
+                          const p = points[xi]
+                          if (!p) return null
+                          const isFirst = i === 0
+                          const isLast = i === xIndices.length - 1
+                          const anchor: 'start' | 'middle' | 'end' = isFirst ? 'start' : isLast ? 'end' : 'middle'
+                          const xPos = isFirst ? Math.max(p.x, leftMargin + 2) : isLast ? Math.min(p.x, svgW - rightMargin - 2) : p.x
+                          return (
+                            <text key={xi} x={xPos} y={topMargin + h + 20} fontSize={10} fill="#555" textAnchor={anchor}>
+                              {formatX(history[xi], xi)}
+                            </text>
+                          )
+                        })}
+
+                        {/* axes */}
+                        <line x1={leftMargin} y1={topMargin} x2={leftMargin} y2={topMargin + h} stroke="rgba(255,255,255,0.08)" />
+                        <line x1={leftMargin} y1={topMargin + h} x2={svgW - rightMargin} y2={topMargin + h} stroke="rgba(255,255,255,0.08)" />
+                      </svg>
+                    </Box>
                   )
                 })()
               ) : (
-                <Typography sx={{ color: '#555' }}>No price history available</Typography>
+                <Typography sx={{ color: '#444', fontSize: '13px' }}>No price history available</Typography>
               )}
             </Paper>
 
-            <Paper sx={{ p: 3, border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 2, mb: 3 }}>
-              <Typography sx={{ color: '#fff', mb: 2 }}>Order book</Typography>
-              <Grid container spacing={2}>
+            {/* About */}
+            {asset.companyDescription && (
+              <Paper sx={{ p: 3, backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, mb: 2.5 }}>
+                <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '14px', mb: 1.5 }}>About {asset.title}</Typography>
+                <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mb: 2 }} />
+                <Typography sx={{ color: '#888', fontSize: '13px', lineHeight: 1.8 }}>
+                  {asset.companyDescription}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 4, mt: 2.5, flexWrap: 'wrap' }}>
+                  {[
+                    { label: 'Market Cap', value: asset.marketCap },
+                    { label: 'Revenue', value: asset.revenue },
+                    { label: 'Revenue Growth', value: asset.revenueGrowth ? `${asset.revenueGrowth}%` : null },
+                    { label: 'Net Income', value: asset.netIncome },
+                    { label: 'P/E Ratio', value: asset.peRatio },
+                    { label: 'Dividend Yield', value: asset.dividendYield ? `${asset.dividendYield}%` : null },
+                    { label: 'Employees', value: asset.employees },
+                    { label: 'Founded', value: asset.founded },
+                    { label: '52-wk Range', value: asset.priceRange },
+                  ].filter(({ value }) => value != null).map(({ label, value }) => (
+                    <Box key={label}>
+                      <Typography sx={{ color: '#444', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 0.25 }}>{label}</Typography>
+                      <Typography sx={{ color: '#ccc', fontSize: '13px', fontWeight: 600 }}>{String(value)}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Paper>
+            )}
+
+            {/* Order book */}
+            <Paper sx={{ p: 3, backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2 }}>
+              <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '14px', mb: 2 }}>Order Book</Typography>
+              <Grid container spacing={0}>
+                {/* Header row */}
                 <Grid item xs={6}>
-                  <Typography sx={{ color: '#aaa', mb: 1 }}>Asks</Typography>
-                  <List dense>
-                    {orderBook.asks.map((a: any, i: number) => (
-                      <ListItem key={`ask-${i}`} sx={{ py: 0 }}>
-                        <ListItemText primary={`${formatCurrency(a.price)}`} secondary={`Size: ${a.size}`} primaryTypographyProps={{ color: '#ff6b6b' }} />
-                      </ListItem>
-                    ))}
-                  </List>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 1, pb: 1, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <Typography sx={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ask Price</Typography>
+                    <Typography sx={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Size</Typography>
+                  </Box>
+                  {orderBook.asks.map((a: any, i: number) => (
+                    <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', px: 1, py: 0.5, '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)' } }}>
+                      <Typography sx={{ color: '#ef4444', fontSize: '13px', fontFamily: 'monospace' }}>{formatCurrency(a.price)}</Typography>
+                      <Typography sx={{ color: '#666', fontSize: '13px', fontFamily: 'monospace' }}>{a.size}</Typography>
+                    </Box>
+                  ))}
                 </Grid>
-                <Grid item xs={6}>
-                  <Typography sx={{ color: '#aaa', mb: 1 }}>Bids</Typography>
-                  <List dense>
-                    {orderBook.bids.map((b: any, i: number) => (
-                      <ListItem key={`bid-${i}`} sx={{ py: 0 }}>
-                        <ListItemText primary={`${formatCurrency(b.price)}`} secondary={`Size: ${b.size}`} primaryTypographyProps={{ color: '#8cffb2' }} />
-                      </ListItem>
-                    ))}
-                  </List>
+                <Grid item xs={6} sx={{ borderLeft: '1px solid rgba(255,255,255,0.06)', pl: 0 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 1, pb: 1, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <Typography sx={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Bid Price</Typography>
+                    <Typography sx={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Size</Typography>
+                  </Box>
+                  {orderBook.bids.map((b: any, i: number) => (
+                    <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', px: 1, py: 0.5, '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)' } }}>
+                      <Typography sx={{ color: '#22c55e', fontSize: '13px', fontFamily: 'monospace' }}>{formatCurrency(b.price)}</Typography>
+                      <Typography sx={{ color: '#666', fontSize: '13px', fontFamily: 'monospace' }}>{b.size}</Typography>
+                    </Box>
+                  ))}
                 </Grid>
               </Grid>
             </Paper>
-
-            <Paper sx={{ p: 3, border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 2 }}>
-              <Typography sx={{ color: '#fff', mb: 2 }}>Orders & Positions</Typography>
-
-              <Typography sx={{ color: '#ccc', mb: 1 }}>Open Orders</Typography>
-              {orders.length ? (
-                <List dense>
-                  {orders.map((o) => (
-                    <ListItem key={o.id} sx={{ py: 0 }}>
-                      <ListItemText primary={`${o.side.toUpperCase()} ${o.quantity} @ ${o.price ? formatCurrency(o.price) : 'MKT'}`} secondary={`Status: ${o.status ?? 'open'}`} />
-                    </ListItem>
-                  ))}
-                </List>
-              ) : (
-                <Typography sx={{ color: '#555', fontSize: '13px' }}>No open orders</Typography>
-              )}
-
-              <Divider sx={{ my: 2, borderColor: 'rgba(255,255,255,0.06)' }} />
-
-              <Typography sx={{ color: '#ccc', mb: 1 }}>Positions</Typography>
-              {positions.length ? (
-                <List dense>
-                  {positions.map((p) => (
-                    <ListItem key={p.id || p.assetId} sx={{ py: 0 }}>
-                      <ListItemText primary={`${p.quantity} shares`} secondary={`Avg Price: ${formatCurrency(p.avgPrice ?? p.averagePrice ?? p.price)}`} />
-                    </ListItem>
-                  ))}
-                </List>
-              ) : (
-                <Typography sx={{ color: '#555', fontSize: '13px' }}>No positions</Typography>
-              )}
-            </Paper>
           </Grid>
 
-          {/* Right Column */}
-          <Grid item xs={12} md={4}>
-            <Paper sx={{
-              p: 3,
-              border: '1px dashed rgba(255,255,255,0.15)',
-              borderRadius: 2,
-              position: { md: 'sticky' },
-              top: { md: 100 },
-            }}>
-              <Typography sx={{ color: '#fff', mb: 2 }}>Order form</Typography>
+          {/* RIGHT: order form + orders & positions */}
+          <Grid item xs={12} lg={4}>
+            <Box sx={{ position: { lg: 'sticky' }, top: { lg: 100 }, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
 
-              <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-                <InputLabel>Side</InputLabel>
-                <Select value={side} label="Side" onChange={(e) => setSide(e.target.value as any)}>
-                  <MenuItem value="buy">Buy</MenuItem>
-                  <MenuItem value="sell">Sell</MenuItem>
-                </Select>
-              </FormControl>
+              {/* Order form */}
+              <Paper sx={{ p: 3, backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2 }}>
+                <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '14px', mb: 2.5 }}>Place Order</Typography>
 
-              <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-                <InputLabel>Type</InputLabel>
-                <Select value={orderType} label="Type" onChange={(e) => setOrderType(e.target.value as any)}>
-                  <MenuItem value="market">Market</MenuItem>
-                  <MenuItem value="limit">Limit</MenuItem>
-                </Select>
-              </FormControl>
+                {/* Buy / Sell toggle */}
+                <Box sx={{ display: 'flex', mb: 2.5, borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {(['buy', 'sell'] as const).map((s) => (
+                    <Box
+                      key={s}
+                      onClick={() => setSide(s)}
+                      sx={{
+                        flex: 1, py: 1, textAlign: 'center', cursor: 'pointer',
+                        backgroundColor: side === s ? (s === 'buy' ? '#166534' : '#7f1d1d') : 'transparent',
+                        transition: 'background-color 0.15s',
+                        '&:hover': { backgroundColor: side !== s ? 'rgba(255,255,255,0.04)' : undefined },
+                      }}
+                    >
+                      <Typography sx={{ color: side === s ? '#fff' : '#555', fontSize: '13px', fontWeight: 600, textTransform: 'capitalize' }}>{s}</Typography>
+                    </Box>
+                  ))}
+                </Box>
 
-              <TextField type="number" size="small" label="Quantity" fullWidth value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} sx={{ mb: 2 }} />
+                <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                  <InputLabel sx={{ fontSize: '13px' }}>Order Type</InputLabel>
+                  <Select value={orderType} label="Order Type" onChange={(e) => setOrderType(e.target.value as any)} sx={{ fontSize: '13px' }}>
+                    <MenuItem value="market">Market</MenuItem>
+                    <MenuItem value="limit">Limit</MenuItem>
+                  </Select>
+                </FormControl>
 
-              {orderType === 'limit' && (
-                <TextField type="number" size="small" label="Limit price" fullWidth value={limitPrice} onChange={(e) => setLimitPrice(e.target.value === '' ? '' : Number(e.target.value))} sx={{ mb: 2 }} />
-              )}
+                <TextField
+                  type="number" size="small" label="Quantity" fullWidth
+                  value={quantity} onChange={(e) => setQuantity(Number(e.target.value))}
+                  sx={{ mb: 2, '& input': { fontSize: '13px' } }}
+                />
 
-              <Button variant="contained" color={side === 'buy' ? 'success' : 'error'} fullWidth onClick={submitOrder} disabled={submitting} sx={{ textTransform: 'none' }}>
-                {submitting ? 'Submitting...' : `${side === 'buy' ? 'Buy' : 'Sell'} ${quantity}`}
-              </Button>
+                {orderType === 'limit' && (
+                  <TextField
+                    type="number" size="small" label="Limit Price" fullWidth
+                    value={limitPrice} onChange={(e) => setLimitPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                    sx={{ mb: 2, '& input': { fontSize: '13px' } }}
+                  />
+                )}
 
-              <Typography sx={{ color: '#999', fontSize: '12px', mt: 2 }}>
-                Estimated notional: {formatCurrency((orderType === 'limit' && limitPrice) ? Number(limitPrice) * Number(quantity) : Number(asset.currentValue) * Number(quantity))}
-              </Typography>
-            </Paper>
+                {/* Estimated notional */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2.5, px: 0.5 }}>
+                  <Typography sx={{ color: '#555', fontSize: '12px' }}>Est. Notional</Typography>
+                  <Typography sx={{ color: '#aaa', fontSize: '12px', fontWeight: 600 }}>
+                    {formatCurrency((orderType === 'limit' && limitPrice) ? Number(limitPrice) * Number(quantity) : Number(asset.currentValue) * Number(quantity))}
+                  </Typography>
+                </Box>
+
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={submitOrder}
+                  disabled={submitting}
+                  sx={{
+                    textTransform: 'none', fontWeight: 600, fontSize: '14px', py: 1.25, borderRadius: '8px',
+                    backgroundColor: side === 'buy' ? '#16a34a' : '#dc2626',
+                    '&:hover': { backgroundColor: side === 'buy' ? '#15803d' : '#b91c1c' },
+                  }}
+                >
+                  {submitting ? 'Submitting…' : `${side === 'buy' ? 'Buy' : 'Sell'} ${quantity} ${symbol}`}
+                </Button>
+              </Paper>
+
+              {/* Orders & Positions */}
+              <Paper sx={{ p: 3, backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2 }}>
+                <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '14px', mb: 2 }}>Orders & Positions</Typography>
+
+                <Typography sx={{ color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 1 }}>Open Orders</Typography>
+                {orders.length ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                    {orders.map((o) => (
+                      <Box key={o.id} sx={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        px: 1.5, py: 1, borderRadius: '8px',
+                        backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                      }}>
+                        <Box>
+                          <Typography sx={{
+                            color: o.side === 'buy' ? '#22c55e' : '#ef4444',
+                            fontSize: '12px', fontWeight: 700, textTransform: 'uppercase',
+                          }}>
+                            {o.side} {o.quantity}
+                          </Typography>
+                          <Typography sx={{ color: '#555', fontSize: '11px' }}>
+                            {o.price ? `@ ${formatCurrency(o.price)}` : 'Market'} · {o.status ?? 'open'}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          {o.status !== 'Cancelling' ? (
+                            <>
+                              <IconButton size="small" onClick={() => handleEdit(o)} title="Edit" sx={{ p: 0.5 }}>
+                                <Edit sx={{ fontSize: 14, color: '#555', '&:hover': { color: '#fff' } }} />
+                              </IconButton>
+                              <IconButton size="small" onClick={() => handleCancel(o.id)} title="Cancel" sx={{ p: 0.5 }}>
+                                <Cancel sx={{ fontSize: 14, color: '#555', '&:hover': { color: '#ef4444' } }} />
+                              </IconButton>
+                            </>
+                          ) : (
+                            <Typography sx={{ color: '#f59e0b', fontSize: '10px' }}>Cancelling…</Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography sx={{ color: '#333', fontSize: '12px', mb: 2 }}>No open orders</Typography>
+                )}
+
+                <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)', my: 2 }} />
+
+                <Typography sx={{ color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 1 }}>Positions</Typography>
+                {positions.length ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                    {positions.map((p: any, i: number) => (
+                      <Box key={p.id ?? i} sx={{
+                        display: 'flex', justifyContent: 'space-between',
+                        px: 1.5, py: 1, borderRadius: '8px',
+                        backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                      }}>
+                        <Box>
+                          <Typography sx={{ color: '#ccc', fontSize: '12px', fontWeight: 600 }}>{Number(p.shares)} shares</Typography>
+                          <Typography sx={{ color: '#555', fontSize: '11px' }}>Avg {formatCurrency(Number(p.avg_cost) || 0)}</Typography>
+                        </Box>
+                        <Box sx={{ textAlign: 'right' }}>
+                          <Typography sx={{ color: '#ccc', fontSize: '12px', fontWeight: 600 }}>
+                            {formatCurrency(Number(p.shares) * Number(p.avg_cost))}
+                          </Typography>
+                          <Typography sx={{ color: '#555', fontSize: '11px' }}>value</Typography>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography sx={{ color: '#333', fontSize: '12px' }}>No positions</Typography>
+                )}
+              </Paper>
+
+            </Box>
           </Grid>
         </Grid>
 
-        {/* Remove this notice once you start building */}
-        <Paper sx={{
-          mt: 4, p: 2.5,
-          border: '1px dashed rgba(255, 200, 0, 0.25)',
-          borderRadius: 2,
-          backgroundColor: 'rgba(255, 200, 0, 0.02)',
-        }}>
-          <Typography sx={{ color: '#998a00', fontSize: '13px', lineHeight: 1.7 }}>
-            The layout above is a generic wireframe to help you get started.
-            Remove it and build your own — this is your playground, feel free to explore.
-          </Typography>
-        </Paper>
+        {/* Edit Order Dialog */}
+        <Dialog
+          open={!!editingOrder}
+          onClose={() => setEditingOrder(null)}
+          PaperProps={{ sx: { backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2, minWidth: 320 } }}
+        >
+          <DialogTitle sx={{ color: '#fff', fontSize: '15px', fontWeight: 600, pb: 1 }}>Edit Order</DialogTitle>
+          <DialogContent sx={{ pt: 1 }}>
+            <TextField
+              type="number" label="Quantity" fullWidth size="small"
+              value={editQty} onChange={(e) => setEditQty(e.target.value === '' ? '' : Number(e.target.value))}
+              sx={{ mb: 2, mt: 1 }}
+            />
+            <TextField
+              type="number" label="Limit Price" fullWidth size="small"
+              value={editPrice} onChange={(e) => setEditPrice(e.target.value === '' ? '' : Number(e.target.value))}
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setEditingOrder(null)} sx={{ color: '#555', textTransform: 'none' }}>Cancel</Button>
+            <Button variant="contained" onClick={submitEdit} sx={{ textTransform: 'none', backgroundColor: '#16a34a', '&:hover': { backgroundColor: '#15803d' } }}>
+              Save &amp; Execute
+            </Button>
+          </DialogActions>
+        </Dialog>
+
       </Container>
     </Box>
   )
