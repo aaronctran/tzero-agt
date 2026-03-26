@@ -36,6 +36,7 @@ export function upsertHolding(userId: string, symbol: string, deltaShares: numbe
     | undefined
 
   if (!holding) {
+    if (deltaShares <= 0) return // nothing to insert for a sell with no position
     db.prepare(
       `INSERT INTO trading_holdings (id, user_id, symbol, shares, avg_cost, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
@@ -44,13 +45,17 @@ export function upsertHolding(userId: string, symbol: string, deltaShares: numbe
   }
 
   const newShares = holding.shares + deltaShares
-  if (newShares === 0) {
+  if (newShares <= 0) {
+    // Position fully closed — remove it
     db.prepare('DELETE FROM trading_holdings WHERE user_id = ? AND symbol = ?').run(userId, symbol)
     return
   }
 
-  const totalCost = holding.avg_cost * holding.shares + deltaShares * price
-  const avgCost = totalCost / newShares
+  // Only recalculate avg_cost when buying (adding shares). Selling keeps the same avg_cost.
+  const avgCost = deltaShares > 0
+    ? (holding.avg_cost * holding.shares + deltaShares * price) / newShares
+    : holding.avg_cost
+
   db.prepare(
     `UPDATE trading_holdings
      SET shares = ?, avg_cost = ?, updated_at = datetime('now')
@@ -133,29 +138,37 @@ export function matchOrder(
       upsertHolding(buyerId, symbol, fillQty, tradePrice)
       upsertHolding(sellerId, symbol, -fillQty, tradePrice)
 
-      // Reconcile cash balances immediately for this trade (atomic within transaction)
+      // Balance updates:
+      // - The buyer's cash was already reserved (pre-debited at order price) by the API route.
+      //   Here we only handle price improvement: if tradePrice < orderPrice, refund the diff.
+      // - The seller receives proceeds from the sale.
       try {
-        const tradeNotional = Number(fillQty) * Number(tradePrice)
+        const tradeNotional = fillQty * tradePrice
+        const orderNotional = fillQty * price  // price = the incoming order's price
 
-        // Buyer: subtract
-        const buyerRow = getBalStmt.get(buyerId) as any
-        if (!buyerRow) {
-          insertBalStmt.run(crypto.randomUUID(), buyerId, -tradeNotional)
-        } else {
-          const newBuyerBal = Number(buyerRow.cash_balance ?? 0) - tradeNotional
-          updateBalStmt.run(newBuyerBal, buyerRow.id)
+        // Refund buyer price improvement (0 if market order or trade matched at exact price)
+        // For a sell-side incoming order the buyer is `match`, whose order price is match.price
+        const buyerOrderPrice = side === 'buy' ? price : Number(match.price)
+        const buyerImprovement = Math.max(0, (buyerOrderPrice - tradePrice) * fillQty)
+        if (buyerImprovement > 0) {
+          const buyerRow = getBalStmt.get(buyerId) as any
+          if (buyerRow) updateBalStmt.run(Number(buyerRow.cash_balance) + buyerImprovement, buyerRow.id)
         }
 
-        // Seller: add
+        // Credit seller: they haven't been charged anything — give them the proceeds
         const sellerRow = getBalStmt.get(sellerId) as any
         if (!sellerRow) {
           insertBalStmt.run(crypto.randomUUID(), sellerId, tradeNotional)
         } else {
-          const newSellerBal = Number(sellerRow.cash_balance ?? 0) + tradeNotional
-          updateBalStmt.run(newSellerBal, sellerRow.id)
+          updateBalStmt.run(Number(sellerRow.cash_balance) + tradeNotional, sellerRow.id)
         }
+
+        // When a sell order is the incoming order, the engine pre-debits nothing for sells —
+        // handle the buyer's side (deduct from buyer, credit seller handled above on next loop turn).
+        // For a sell-side incoming order: deduct from the matched buyer (who placed a limit buy earlier,
+        // meaning their cash was reserved when THEY placed their order).
+        // Nothing extra needed: the matched buyer's cash was already reserved when their buy was placed.
       } catch (e) {
-        // If balance reconciliation fails, throw to rollback the transaction
         console.error('Balance update failed during matching:', e)
         throw e
       }
@@ -284,25 +297,26 @@ export function matchExistingOrder(orderId: string) {
       upsertHolding(buyerId, symbol, fillQty, tradePrice)
       upsertHolding(sellerId, symbol, -fillQty, tradePrice)
 
-      // Reconcile cash balances immediately for this trade (atomic within transaction)
-      const tradeNotional = Number(fillQty) * Number(tradePrice)
+      // Balance settlement — same model as matchOrder:
+      // Buyer's cash was pre-reserved when they placed their original order.
+      // Refund price improvement if trade filled cheaper than order price.
+      // Credit seller with full trade proceeds.
+      const tradeNotional = fillQty * tradePrice
+      const orderNotional = fillQty * price
 
-      // Buyer: subtract
-      const buyerRow = getBalStmt.get(buyerId) as any
-      if (!buyerRow) {
-        insertBalStmt.run(crypto.randomUUID(), buyerId, -tradeNotional)
-      } else {
-        const newBuyerBal = Number(buyerRow.cash_balance ?? 0) - tradeNotional
-        updateBalStmt.run(newBuyerBal, buyerRow.id)
+      // For a sell-side incoming order the buyer is `match`, whose reserved price is match.price
+      const buyerOrderPrice = side === 'buy' ? price : Number(match.price)
+      const buyerImprovement = Math.max(0, (buyerOrderPrice - tradePrice) * fillQty)
+      if (buyerImprovement > 0) {
+        const buyerRow = getBalStmt.get(buyerId) as any
+        if (buyerRow) updateBalStmt.run(Number(buyerRow.cash_balance) + buyerImprovement, buyerRow.id)
       }
 
-      // Seller: add
       const sellerRow = getBalStmt.get(sellerId) as any
       if (!sellerRow) {
         insertBalStmt.run(crypto.randomUUID(), sellerId, tradeNotional)
       } else {
-        const newSellerBal = Number(sellerRow.cash_balance ?? 0) + tradeNotional
-        updateBalStmt.run(newSellerBal, sellerRow.id)
+        updateBalStmt.run(Number(sellerRow.cash_balance) + tradeNotional, sellerRow.id)
       }
 
       remaining -= fillQty

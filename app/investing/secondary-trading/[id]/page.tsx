@@ -28,18 +28,19 @@ import {
   FormControl,
   InputLabel,
   Divider,
-  List,
-  ListItem,
-  ListItemText,
   IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Snackbar,
+  Alert,
+  Skeleton,
+  Tooltip,
 } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import { ArrowBack } from '@mui/icons-material'
-import { Edit, Cancel } from '@mui/icons-material'
+import { Edit, Cancel, Refresh } from '@mui/icons-material'
 import { useAuth } from '@/contexts/AuthContext'
 import { formatCurrency, getSecondaryTradingSymbol, slugify, getSeededColor } from '@/lib/investmentUtils'
 import secondaryTradingAssets from '@/data/secondaryTradingAssets.json'
@@ -75,6 +76,7 @@ export default function SecondaryTradingDetailPage() {
   // Local state: orders/positions and order form
   const [orders, setOrders] = useState<any[]>([])
   const [positions, setPositions] = useState<any[]>([])
+  const [assetTrades, setAssetTrades] = useState<any[]>([])
 
   const [side, setSide] = useState<'buy' | 'sell'>('buy')
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market')
@@ -85,6 +87,28 @@ export default function SecondaryTradingDetailPage() {
   const [editQty, setEditQty] = useState<number | ''>('')
   const [editPrice, setEditPrice] = useState<number | ''>('')
   const [cancellingOrderIds, setCancellingOrderIds] = useState<Record<string, boolean>>({})
+  const [cancelConfirmOrderId, setCancelConfirmOrderId] = useState<string | null>(null)
+  const [loadingOrders, setLoadingOrders] = useState(true)
+
+  // Snackbar feedback
+  const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({ open: false, message: '', severity: 'success' })
+  const showSnack = (message: string, severity: 'success' | 'error' | 'info' = 'success') => setSnack({ open: true, message, severity })
+
+  // Inline form validation errors
+  const [formErrors, setFormErrors] = useState<{ quantity?: string; limitPrice?: string }>({})
+
+  const validateForm = (): boolean => {
+    const errors: { quantity?: string; limitPrice?: string } = {}
+    const qty = Number(quantity)
+    if (!qty || qty <= 0) errors.quantity = 'Quantity must be greater than 0'
+    else if (!Number.isInteger(qty)) errors.quantity = 'Quantity must be a whole number'
+    if (orderType === 'limit') {
+      if (limitPrice === '' || limitPrice === undefined) errors.limitPrice = 'Limit price is required'
+      else if (Number(limitPrice) <= 0) errors.limitPrice = 'Price must be greater than 0'
+    }
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   // Generate a simple order book if templates exist, otherwise create around currentValue
   const orderBook = useMemo(() => {
@@ -151,15 +175,16 @@ export default function SecondaryTradingDetailPage() {
 
   // Fetch user's orders/positions (best-effort, API may not exist yet)
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated) { setLoadingOrders(false); return }
 
     let mounted = true
 
     ;(async () => {
       try {
-        const [ordersRes, positionsRes] = await Promise.all([
+        const [ordersRes, positionsRes, tradesRes] = await Promise.all([
           fetch('/api/trading/orders'),
           fetch('/api/trading/positions'),
+          fetch('/api/trading/trades'),
         ])
 
         if (!mounted) return
@@ -167,7 +192,6 @@ export default function SecondaryTradingDetailPage() {
         if (ordersRes.ok) {
           const json = await ordersRes.json()
           const allOrders = Array.isArray(json) ? json : json.orders ?? []
-          // keep only open orders for this symbol
           const filtered = allOrders.filter((o: any) => {
             const symbolMatch = (o.symbol && String(o.symbol) === String(symbol)) || o.assetId === asset.id
             const isOpen = !['Completed', 'Cancelled'].includes(o.status)
@@ -178,18 +202,22 @@ export default function SecondaryTradingDetailPage() {
         if (positionsRes.ok) {
           const json = await positionsRes.json()
           const allPositions = Array.isArray(json) ? json : json.positions ?? []
-          // trading_holdings rows use `symbol`, `shares`, and `avg_cost`
           const filteredPos = allPositions.filter((p: any) => String(p.symbol) === String(symbol))
           setPositions(filteredPos)
         }
+        if (tradesRes.ok) {
+          const json = await tradesRes.json()
+          const allTrades = (json.trades ?? []) as any[]
+          setAssetTrades(allTrades.filter((t: any) => String(t.symbol) === String(symbol)))
+        }
       } catch (e) {
         // ignore
+      } finally {
+        if (mounted) setLoadingOrders(false)
       }
     })()
 
-    return () => {
-      mounted = false
-    }
+    return () => { mounted = false }
   }, [isAuthenticated, symbol, asset.id])
 
   async function submitOrder() {
@@ -198,10 +226,9 @@ export default function SecondaryTradingDetailPage() {
       return
     }
 
-    const qty = Number(quantity)
-    if (!qty || qty <= 0) return
-    if (orderType === 'limit' && (limitPrice === '' || Number(limitPrice) <= 0)) return
+    if (!validateForm()) return
 
+    const qty = Number(quantity)
     const payload = {
       assetId: asset.id,
       side,
@@ -218,32 +245,33 @@ export default function SecondaryTradingDetailPage() {
         body: JSON.stringify(payload),
       })
 
-      const created = res.ok ? await res.json() : null
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        showSnack(errData.error || 'Order failed. Please try again.', 'error')
+        return
+      }
 
-      // optimistic update: add to local orders
-      setOrders((prev) => [{ id: created?.id ?? `local-${Date.now()}`, assetId: asset.id, side, orderType, quantity: qty, price: payload.price, status: res.ok ? created?.status ?? 'open' : 'pending', createdAt: new Date().toISOString() }, ...prev])
-
-      // reset limit price for market orders
+      const created = await res.json()
+      setOrders((prev) => [{ id: created?.id ?? `local-${Date.now()}`, assetId: asset.id, side, orderType, quantity: qty, price: payload.price, status: created?.status ?? 'open', createdAt: new Date().toISOString() }, ...prev])
+      showSnack(`${side === 'buy' ? 'Buy' : 'Sell'} order placed for ${qty} ${symbol}`, 'success')
       if (orderType === 'market') setLimitPrice('')
     } catch (e) {
-      // ignore for now
+      showSnack('Network error. Please check your connection.', 'error')
     } finally {
       setSubmitting(false)
     }
   }
 
   async function handleCancel(orderId: string) {
-    // optimistic UI
     setCancellingOrderIds((s) => ({ ...s, [orderId]: true }))
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: 'Cancelling' } : o)))
     try {
       const res = await fetch(`/api/trading/orders/${orderId}/cancel`, { method: 'POST' })
       if (!res.ok) throw new Error('Cancel failed')
-      // remove cancelled order from list
       setOrders((prev) => prev.filter((o) => o.id !== orderId))
+      showSnack('Order cancelled', 'info')
     } catch (e) {
-      console.error('Cancel failed', e)
-      // rollback
+      showSnack('Failed to cancel order. Please try again.', 'error')
       await refreshOrders()
     } finally {
       setCancellingOrderIds((s) => { const copy = { ...s }; delete copy[orderId]; return copy })
@@ -263,11 +291,9 @@ export default function SecondaryTradingDetailPage() {
     if (editQty !== '') payload.quantity = Number(editQty)
     if (editPrice !== '') payload.price = Number(editPrice)
 
-    // optimistic update: apply new quantity/price locally
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, quantity: payload.quantity ?? o.quantity, price: payload.price ?? o.price } : o)))
 
     try {
-      // Call the complete endpoint with optional update payload so server updates then matches
       const execRes = await fetch(`/api/trading/orders/${orderId}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -275,32 +301,23 @@ export default function SecondaryTradingDetailPage() {
       })
 
       if (!execRes.ok) {
-        // If execution failed, refresh to show authoritative state
         await refreshOrders()
         await refreshPositions()
-        throw new Error('Execution failed')
+        showSnack('Failed to update order. Refreshed from server.', 'error')
+        setEditingOrder(null)
+        return
       }
 
       const execJson = await execRes.json()
 
-      // Reflect the authoritative status from the server immediately
-      const matchStatus: string = execJson?.matchResult?.status ?? execJson?.order?.status ?? 'Completed'
-      const matchRemaining: number = execJson?.matchResult?.remaining ?? 0
+      // /complete always force-completes the order — remove it from open orders
+      setOrders((prev) => prev.filter((o) => o.id !== orderId))
+      showSnack('Order executed successfully', 'success')
 
-      // If order is Completed, remove it from the open orders list; otherwise update status
-      if (matchStatus === 'Completed') {
-        setOrders((prev) => prev.filter((o) => o.id !== orderId))
-      } else {
-        setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: matchStatus, remaining: matchRemaining } : o)))
-      }
-
-      // Refresh orders & positions to reflect fills, holdings and balances
-      await Promise.all([refreshOrders(), refreshPositions()])
-
+      await Promise.all([refreshOrders(), refreshPositions(), refreshTrades()])
       setEditingOrder(null)
     } catch (e) {
-      console.error('Edit+Execute failed', e)
-      // rollback by reloading orders/positions from server
+      showSnack('Network error updating order.', 'error')
       await refreshOrders()
       await refreshPositions()
       setEditingOrder(null)
@@ -334,6 +351,18 @@ export default function SecondaryTradingDetailPage() {
       setPositions(filteredPos)
     } catch (err) {
       console.error('Error refreshing positions', err)
+    }
+  }
+
+  async function refreshTrades() {
+    try {
+      const resp = await fetch('/api/trading/trades')
+      if (!resp.ok) return
+      const data = await resp.json()
+      const allTrades = (data.trades ?? []) as any[]
+      setAssetTrades(allTrades.filter((t: any) => String(t.symbol) === String(symbol)))
+    } catch (err) {
+      console.error('Error refreshing trades', err)
     }
   }
 
@@ -624,15 +653,29 @@ export default function SecondaryTradingDetailPage() {
 
                 <TextField
                   type="number" size="small" label="Quantity" fullWidth
-                  value={quantity} onChange={(e) => setQuantity(Number(e.target.value))}
-                  sx={{ mb: 2, '& input': { fontSize: '13px' } }}
+                  value={quantity}
+                  onChange={(e) => {
+                    setQuantity(Number(e.target.value))
+                    if (formErrors.quantity) setFormErrors((p) => ({ ...p, quantity: undefined }))
+                  }}
+                  error={!!formErrors.quantity}
+                  helperText={formErrors.quantity}
+                  inputProps={{ min: 1, step: 1 }}
+                  sx={{ mb: formErrors.quantity ? 1 : 2, '& input': { fontSize: '13px' } }}
                 />
 
                 {orderType === 'limit' && (
                   <TextField
                     type="number" size="small" label="Limit Price" fullWidth
-                    value={limitPrice} onChange={(e) => setLimitPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                    sx={{ mb: 2, '& input': { fontSize: '13px' } }}
+                    value={limitPrice}
+                    onChange={(e) => {
+                      setLimitPrice(e.target.value === '' ? '' : Number(e.target.value))
+                      if (formErrors.limitPrice) setFormErrors((p) => ({ ...p, limitPrice: undefined }))
+                    }}
+                    error={!!formErrors.limitPrice}
+                    helperText={formErrors.limitPrice}
+                    inputProps={{ min: 0.01, step: 0.01 }}
+                    sx={{ mb: formErrors.limitPrice ? 1 : 2, '& input': { fontSize: '13px' } }}
                   />
                 )}
 
@@ -661,10 +704,21 @@ export default function SecondaryTradingDetailPage() {
 
               {/* Orders & Positions */}
               <Paper sx={{ p: 3, backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2 }}>
-                <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '14px', mb: 2 }}>Orders & Positions</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                  <Typography sx={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>Orders & Positions</Typography>
+                  <Tooltip title="Refresh">
+                    <IconButton size="small" onClick={() => { refreshOrders(); refreshPositions(); refreshTrades() }} sx={{ color: '#555', p: 0.5, '&:hover': { color: '#fff' } }}>
+                      <Refresh sx={{ fontSize: 15 }} />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
 
                 <Typography sx={{ color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 1 }}>Open Orders</Typography>
-                {orders.length ? (
+                {loadingOrders ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                    {[1, 2].map((i) => <Skeleton key={i} variant="rounded" height={52} sx={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '8px' }} />)}
+                  </Box>
+                ) : orders.length ? (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                     {orders.map((o) => (
                       <Box key={o.id} sx={{
@@ -686,12 +740,16 @@ export default function SecondaryTradingDetailPage() {
                         <Box sx={{ display: 'flex', gap: 0.5 }}>
                           {o.status !== 'Cancelling' ? (
                             <>
-                              <IconButton size="small" onClick={() => handleEdit(o)} title="Edit" sx={{ p: 0.5 }}>
-                                <Edit sx={{ fontSize: 14, color: '#555', '&:hover': { color: '#fff' } }} />
-                              </IconButton>
-                              <IconButton size="small" onClick={() => handleCancel(o.id)} title="Cancel" sx={{ p: 0.5 }}>
-                                <Cancel sx={{ fontSize: 14, color: '#555', '&:hover': { color: '#ef4444' } }} />
-                              </IconButton>
+                              <Tooltip title="Edit order">
+                                <IconButton size="small" onClick={() => handleEdit(o)} sx={{ p: 0.5, '&:hover svg': { color: '#fff' } }}>
+                                  <Edit sx={{ fontSize: 14, color: '#555' }} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Cancel order">
+                                <IconButton size="small" onClick={() => setCancelConfirmOrderId(o.id)} sx={{ p: 0.5, '&:hover svg': { color: '#ef4444' } }}>
+                                  <Cancel sx={{ fontSize: 14, color: '#555' }} />
+                                </IconButton>
+                              </Tooltip>
                             </>
                           ) : (
                             <Typography sx={{ color: '#f59e0b', fontSize: '10px' }}>Cancelling…</Typography>
@@ -707,7 +765,9 @@ export default function SecondaryTradingDetailPage() {
                 <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)', my: 2 }} />
 
                 <Typography sx={{ color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 1 }}>Positions</Typography>
-                {positions.length ? (
+                {loadingOrders ? (
+                  <Skeleton variant="rounded" height={52} sx={{ backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '8px' }} />
+                ) : positions.length ? (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                     {positions.map((p: any, i: number) => (
                       <Box key={p.id ?? i} sx={{
@@ -720,7 +780,7 @@ export default function SecondaryTradingDetailPage() {
                           <Typography sx={{ color: '#555', fontSize: '11px' }}>Avg {formatCurrency(Number(p.avg_cost) || 0)}</Typography>
                         </Box>
                         <Box sx={{ textAlign: 'right' }}>
-                          <Typography sx={{ color: '#ccc', fontSize: '12px', fontWeight: 600 }}>
+                          <Typography sx={{ color: '#00ff88', fontSize: '12px', fontWeight: 600 }}>
                             {formatCurrency(Number(p.shares) * Number(p.avg_cost))}
                           </Typography>
                           <Typography sx={{ color: '#555', fontSize: '11px' }}>value</Typography>
@@ -731,11 +791,78 @@ export default function SecondaryTradingDetailPage() {
                 ) : (
                   <Typography sx={{ color: '#333', fontSize: '12px' }}>No positions</Typography>
                 )}
+
+                {/* Trade history for this asset */}
+                {!loadingOrders && assetTrades.length > 0 && (
+                  <>
+                    <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)', my: 2 }} />
+                    <Typography sx={{ color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', mb: 1 }}>Trade History</Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                      {assetTrades.map((t: any, i: number) => (
+                        <Box key={t.id ?? i} sx={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          px: 1.5, py: 1, borderRadius: '8px',
+                          backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                        }}>
+                          <Box>
+                            <Typography sx={{
+                              color: t.side === 'buy' ? '#22c55e' : '#ef4444',
+                              fontSize: '12px', fontWeight: 700, textTransform: 'uppercase',
+                            }}>
+                              {t.side} {t.quantity}
+                            </Typography>
+                            <Typography sx={{ color: '#555', fontSize: '11px' }}>
+                              @ {formatCurrency(Number(t.price))}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ textAlign: 'right' }}>
+                            <Typography sx={{ color: '#ccc', fontSize: '12px', fontWeight: 600 }}>
+                              {formatCurrency(Number(t.price) * Number(t.quantity))}
+                            </Typography>
+                            <Typography sx={{ color: '#444', fontSize: '10px' }}>
+                              {new Date(t.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  </>
+                )}
               </Paper>
 
             </Box>
           </Grid>
         </Grid>
+
+        {/* Cancel Order Confirmation Dialog */}
+        <Dialog
+          open={!!cancelConfirmOrderId}
+          onClose={() => setCancelConfirmOrderId(null)}
+          PaperProps={{ sx: { backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2, minWidth: 320 } }}
+        >
+          <DialogTitle sx={{ color: '#fff', fontSize: '15px', fontWeight: 600, pb: 1 }}>Cancel Order</DialogTitle>
+          <DialogContent sx={{ pt: 0.5 }}>
+            <Typography sx={{ color: '#ccc', fontSize: '13px' }}>
+              Are you sure you want to cancel this order? This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setCancelConfirmOrderId(null)} sx={{ color: '#aaa', textTransform: 'none', '&:hover': { color: '#fff' } }}>
+              Keep Order
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                const id = cancelConfirmOrderId!
+                setCancelConfirmOrderId(null)
+                handleCancel(id)
+              }}
+              sx={{ textTransform: 'none', backgroundColor: '#dc2626', '&:hover': { backgroundColor: '#b91c1c' } }}
+            >
+              Yes, Cancel
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Edit Order Dialog */}
         <Dialog
@@ -748,11 +875,13 @@ export default function SecondaryTradingDetailPage() {
             <TextField
               type="number" label="Quantity" fullWidth size="small"
               value={editQty} onChange={(e) => setEditQty(e.target.value === '' ? '' : Number(e.target.value))}
+              inputProps={{ min: 1, step: 1 }}
               sx={{ mb: 2, mt: 1 }}
             />
             <TextField
               type="number" label="Limit Price" fullWidth size="small"
               value={editPrice} onChange={(e) => setEditPrice(e.target.value === '' ? '' : Number(e.target.value))}
+              inputProps={{ min: 0.01, step: 0.01 }}
             />
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -762,6 +891,22 @@ export default function SecondaryTradingDetailPage() {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Global feedback snackbar */}
+        <Snackbar
+          open={snack.open}
+          autoHideDuration={4000}
+          onClose={() => setSnack((s) => ({ ...s, open: false }))}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert
+            severity={snack.severity}
+            onClose={() => setSnack((s) => ({ ...s, open: false }))}
+            sx={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', '& .MuiAlert-icon': { alignItems: 'center' } }}
+          >
+            {snack.message}
+          </Alert>
+        </Snackbar>
 
       </Container>
     </Box>
