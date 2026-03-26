@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Box, Typography, Button, Paper, IconButton } from '@mui/material'
+import { Box, Typography, Button, Paper, IconButton, Skeleton, Alert } from '@mui/material'
 import { ExpandMore, ExpandLess, TrendingUp } from '@mui/icons-material'
 
 interface Investment {
@@ -55,35 +55,28 @@ export default function InvestmentsSection({
   const router = useRouter()
   const [investments, setInvestments] = useState<Investment[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [positions, setPositions] = useState<Array<{ id: string; user_id: string; symbol: string; shares: number; avg_cost: number }>>([])
 
   useEffect(() => {
     const fetchInvestments = async () => {
-      try {
-        const response = await fetch('/api/investments')
-        if (response.ok) {
-          const data = await response.json()
-          setInvestments(data.investments || [])
-        }
-      } catch (error) {
-        console.error('Error fetching investments:', error)
-      } finally {
-        setLoading(false)
-      }
+      const response = await fetch('/api/investments')
+      if (!response.ok) throw new Error('Failed to load investments')
+      const data = await response.json()
+      setInvestments(data.investments || [])
     }
     const fetchPositions = async () => {
-      try {
-        const resp = await fetch('/api/trading/positions')
-        if (resp.ok) {
-          const data = await resp.json()
-          setPositions(data.positions || [])
-        }
-      } catch (err) {
-        console.error('Error fetching trading positions:', err)
-      }
+      const resp = await fetch('/api/trading/positions')
+      if (!resp.ok) throw new Error('Failed to load positions')
+      const data = await resp.json()
+      setPositions(data.positions || [])
     }
-    fetchInvestments()
-    fetchPositions()
+    Promise.all([fetchInvestments(), fetchPositions()])
+      .catch((err) => {
+        console.error('Error fetching positions:', err)
+        setError('Failed to load positions. Please refresh and try again.')
+      })
+      .finally(() => setLoading(false))
   }, [])
 
   const secondaryTradingInvestments = investments.filter((inv) => inv.asset_type === 'SECONDARY_TRADING')
@@ -103,8 +96,31 @@ export default function InvestmentsSection({
 
   if (loading) {
     return (
+      <Paper sx={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, overflow: 'hidden' }}>
+        <Box sx={{ px: 3, py: 2, borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Skeleton variant="text" width={90} height={16} sx={{ bgcolor: 'rgba(255,255,255,0.06)' }} />
+          <Skeleton variant="circular" width={20} height={20} sx={{ bgcolor: 'rgba(255,255,255,0.06)' }} />
+        </Box>
+        {[...Array(4)].map((_, i) => (
+          <Box key={i} sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', alignItems: 'center', px: 3, py: 1.75, borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+            {[...Array(5)].map((__, j) => (
+              <Skeleton key={j} variant="text" width={j === 0 ? 80 : 60} height={14} sx={{ bgcolor: 'rgba(255,255,255,0.05)' }} />
+            ))}
+          </Box>
+        ))}
+      </Paper>
+    )
+  }
+
+  if (error) {
+    return (
       <Paper sx={{ backgroundColor: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 2, p: 3 }}>
-        <Typography sx={{ color: '#444', fontSize: '13px', textAlign: 'center' }}>Loading positions…</Typography>
+        <Alert
+          severity="error"
+          sx={{ backgroundColor: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', '& .MuiAlert-icon': { color: '#ef4444' } }}
+        >
+          {error}
+        </Alert>
       </Paper>
     )
   }
